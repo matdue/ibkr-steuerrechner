@@ -53,7 +53,7 @@ def read_statement_file(file: io.TextIOBase):
 
 def main():
     # TODO: Im Dockerfile: RUN locale-gen en_US.UTF-8
-    locale.setlocale(locale.LC_ALL, "de_DE")
+    #locale.setlocale(locale.LC_ALL, "de_DE")
 
     st.title("Steuerrechner für Interactive Brokers")
     st.caption("Zur Berechnung der Steuerschuld von Optionen und Aktiengeschäften")
