@@ -5,6 +5,8 @@ from typing import Optional
 import pandas as pd
 import streamlit as st
 
+from iterable_text_io import IterableTextIO
+
 
 def categorize_statement_record(record: pd.Series) -> tuple[str, Optional[str]]:
     if record["Description"] in ["Opening Balance", "Closing Balance"]:
@@ -21,6 +23,7 @@ def categorize_statement_record(record: pd.Series) -> tuple[str, Optional[str]]:
         return "dividend", "other"
 
     return "other", None
+
 
 def read_statement_file(file: io.TextIOBase):
     """
@@ -39,11 +42,9 @@ def read_statement_file(file: io.TextIOBase):
     """
     # Load relevant lines only
     # A CSV may contain more than one report, but we are interested in Statement of Funds only
-    # TODO: Auch deutsche Reports unterstützen
-    statement_of_funds_lines = io.StringIO()
-    statement_of_funds_lines.writelines(line for line in file if line.startswith("Statement of Funds,"))
-    statement_of_funds_lines.seek(0)
-    df = pd.read_csv(statement_of_funds_lines, parse_dates=["Report Date", "Activity Date"])
+    statement_of_funds_lines = (line for line in file if line.startswith("Statement of Funds,"))
+    with IterableTextIO(statement_of_funds_lines) as s:
+        df = pd.read_csv(s, parse_dates=["Report Date", "Activity Date"])
     df["Debit"] = pd.to_numeric(df["Debit"], errors="coerce")
     df["Credit"] = pd.to_numeric(df["Credit"], errors="coerce")
     df["Sum"] = df[["Debit", "Credit"]].sum(axis=1)
