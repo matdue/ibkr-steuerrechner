@@ -1,11 +1,15 @@
 import io
 import locale
+import re
 from typing import Optional
 
 import pandas as pd
 import streamlit as st
 
 from iterable_text_io import IterableTextIO
+
+
+RECORD_INTEREST = re.compile(r"Credit|Debit Interest")
 
 
 def categorize_statement_record(record: pd.Series) -> tuple[str, Optional[str]]:
@@ -21,6 +25,9 @@ def categorize_statement_record(record: pd.Series) -> tuple[str, Optional[str]]:
         if record["Description"].endswith(" Tax"):
             return "dividend", "tax"
         return "dividend", "other"
+
+    if RECORD_INTEREST.search(record["Description"]):
+        return "interest", None
 
     return "other", None
 
@@ -110,6 +117,18 @@ def display_dividends(df_year: pd.DataFrame, df_year_corrections: pd.DataFrame, 
         st.dataframe(pd.concat([df_dividend, df_dividend_corrections]))
 
 
+def display_interests(df_year: pd.DataFrame):
+    st.header("Zinsen")
+    df_interests = df_year.query("Category == 'interest'")
+    earned_interests = df_interests["Credit"].sum()
+    payed_interests = abs(df_interests["Debit"].sum())
+    st.write(f"Einnahmen: {locale.currency(earned_interests, grouping=True)}")
+    st.write(f"Ausgaben: {locale.currency(payed_interests, grouping=True)}")
+    st.write(f"Summe: {locale.currency(earned_interests - payed_interests, grouping=True)}")
+    with st.expander("Auszug"):
+        st.dataframe(df_interests)
+
+
 def main():
     locale.setlocale(locale.LC_ALL, "de_DE.utf8")
 
@@ -141,6 +160,7 @@ def main():
 
     display_fund_transfer(df_year)
     display_dividends(df_year, df_year_corrections, selected_year)
+    display_interests(df_year)
 
 
 if __name__ == "__main__":
