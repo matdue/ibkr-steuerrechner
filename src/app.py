@@ -1,35 +1,69 @@
 import io
 import locale
 import re
+from dataclasses import dataclass, asdict
 from typing import Optional
 
 import pandas as pd
 import streamlit as st
 
 from iterable_text_io import IterableTextIO
-
+from utils import calc_share_trade_profits
 
 RECORD_INTEREST = re.compile(r"Credit|Debit Interest")
+RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[0-9]{2} [0-9]+(\.[0-9]+)? ([PC])) (\(\w+\))?")
+RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9]+) (.*?)( \(\w+\))?$")
 
 
 def categorize_statement_record(record: pd.Series) -> tuple[str, Optional[str]]:
-    if record["Description"] in ["Opening Balance", "Closing Balance"]:
+    description = record["Description"]
+    if description in ["Opening Balance", "Closing Balance"]:
         return "balance", None
 
-    if record["Description"] == "Electronic Fund Transfer":
+    if description == "Electronic Fund Transfer":
         return "transfer", None
 
-    if "Cash Dividend" in record["Description"]:
-        if record["Description"].endswith(" (Ordinary Dividend)"):
+    if "Cash Dividend" in description:
+        if description.endswith(" (Ordinary Dividend)"):
             return "dividend", "ordinary"
-        if record["Description"].endswith(" Tax"):
+        if description.endswith(" Tax"):
             return "dividend", "tax"
         return "dividend", "other"
 
-    if RECORD_INTEREST.search(record["Description"]):
+    if RECORD_INTEREST.search(description):
         return "interest", None
+    if RECORD_OPTION.match(description):
+        return "option", None
+    if RECORD_SHARES.match(description):
+        return "shares", None
 
     return "other", None
+
+
+@dataclass
+class OptionShare:
+    is_option: bool
+    action: str
+    count: int
+    underlying: str
+
+
+def parse_option_share_record(record: pd.Series) -> dict:
+    description = record["Description"]
+    match = RECORD_OPTION.match(description)
+    if match is not None:
+        # Cleansing: Remove ending .0 from strike price as some options have this precision specification and some not
+        underlying = re.sub(r"(.*?)(\.0)( [CP])", r"\1\3", match.group(3))
+        return asdict(OptionShare(True, match.group(1), int(match.group(2)), underlying))
+        #return {"Action": match.group(1), "Count": int(match.group(2)), "Underlying": underlying, "Option": True}
+
+    match = RECORD_SHARES.match(description)
+    if match is not None:
+        return asdict(OptionShare(False, match.group(1), int(match.group(2)), match.group(3)))
+        #return {"Action": match.group(1), "Count": int(match.group(2)), "Underlying": match.group(3), "Option": False}
+
+    #return {"Action": None, "Count": None, "Underlying": None, "Option": False}
+
 
 
 def read_statement_file(file: io.TextIOBase):
@@ -129,6 +163,62 @@ def display_interests(df_year: pd.DataFrame):
         st.dataframe(df_interests)
 
 
+def display_options_shares(df: pd.DataFrame, selected_year: str):
+    df_shares = df.query("Category == 'shares'").copy()
+    df_shares[["is_option", "action", "count", "underlying"]] = df_shares.apply(parse_option_share_record, axis=1,
+                                                                                result_type="expand")
+    def add_profits(df_group):
+        df_group_for_calc = (df_group
+                             .filter(["count", "Credit", "Debit"])
+                             .rename(columns={"Credit": "credit", "Debit": "debit"}))
+        df_group["profit"] = calc_share_trade_profits(df_group_for_calc)
+        return df_group
+
+    df_shares = df_shares.groupby("underlying", as_index=False).apply(add_profits)
+    df_shares_selected_year = df_shares.query("Activity_Year == @selected_year").filter(["profit"])
+    shares_profits = df_shares_selected_year.query("profit > 0").sum()[0]
+    shares_losses = abs(df_shares_selected_year.query("profit < 0")).sum()[0]
+
+    st.header("Aktien")
+    st.write(f"Gewinne: {locale.currency(shares_profits, grouping=True)}")
+    st.write(f"Verluste: {locale.currency(shares_losses, grouping=True)}")
+    with st.expander("Auszug"):
+        st.dataframe(df_shares)
+
+
+    df_options = df.query("Category == 'option'").copy()
+    df_options[["is_option", "action", "count", "underlying"]] = df_options.apply(parse_option_share_record, axis=1,
+                                                                                  result_type="expand")
+    df_options_by_underlying = df_options.filter(["underlying", "Debit", "Credit", "count", "Report Date", "Report_Year", "action"]).groupby("underlying").agg(
+        Credit=("Credit", "sum"),
+        Debit=("Debit", "sum"),
+        Count=("count", "sum"),
+        Action=("action", "first"),
+        Open=("Report Date", "first"),
+        Close=("Report Date", "last"),
+        OpenYear=("Report_Year", "first"),
+        CloseYear=("Report_Year", "last")).query("Open.dt.year==2022")
+    df_stillhalter = df_options_by_underlying.query("Action=='Sell'")
+    df_stillhalter_totals = df_stillhalter.filter(["Credit", "Debit"]).sum()
+    df_termingeschaefte = df_options_by_underlying.query("Action=='Buy'")
+    df_termingeschaefte_totals = df_termingeschaefte.filter(["Credit", "Debit"]).sum()
+
+    stillhalter_einkuenfte = df_stillhalter_totals["Credit"]
+    stillhalter_glattstellungen = abs(df_stillhalter_totals["Debit"])
+    termingeschaefte_einkuenfte = df_termingeschaefte_totals["Credit"]
+    termingeschaefte_glattstellungen = abs(df_termingeschaefte_totals["Debit"])
+
+    st.header("Optionen")
+    st.subheader("Stillhaltergeschäfte")
+    st.write(f"Einkünfte: {locale.currency(stillhalter_einkuenfte, grouping=True)}")
+    st.write(f"Glattstellungen: {locale.currency(stillhalter_glattstellungen, grouping=True)}")
+    st.subheader("Termingeschäfte")
+    st.write(f"Einkünfte: {locale.currency(termingeschaefte_einkuenfte, grouping=True)}")
+    st.write(f"Glattstellungen: {locale.currency(termingeschaefte_glattstellungen, grouping=True)}")
+    with st.expander("Auszug"):
+        st.dataframe(df_options)
+
+
 def main():
     locale.setlocale(locale.LC_ALL, "de_DE.utf8")
 
@@ -161,6 +251,7 @@ def main():
     display_fund_transfer(df_year)
     display_dividends(df_year, df_year_corrections, selected_year)
     display_interests(df_year)
+    display_options_shares(df_year, selected_year)
 
 
 if __name__ == "__main__":
