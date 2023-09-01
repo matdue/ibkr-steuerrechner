@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-def calc_share_trade_profits(df: pd.DataFrame):
+def calc_share_trade_profits(df: pd.DataFrame, count_column: str, debit_column: str, credit_column: str):
     """
     Calculates the profits of all shares trades using FIFO method in the given data frame.
     The data frame must have the following columns:
@@ -32,11 +32,11 @@ def calc_share_trade_profits(df: pd.DataFrame):
     # profit: Calculated profit of each sale
     # In addition, all values will be converted to decimals as floats are unable to represents financial numbers
     # correctly.
-    temp = df.filter(["count", "debit", "credit"])
-    temp["credit"] = temp["credit"].fillna(Decimal("NaN")).apply(Decimal)
-    temp["debit"] = temp["debit"].fillna(Decimal("NaN")).apply(Decimal)
-    temp["remaining"] = temp["count"]
-    temp["profit"] = temp["credit"].fillna(Decimal(0))
+    temp = df.filter([count_column, debit_column, credit_column])
+    temp[credit_column] = temp[credit_column].fillna(Decimal("NaN")).apply(Decimal)
+    temp[debit_column] = temp[debit_column].fillna(Decimal("NaN")).apply(Decimal)
+    temp["remaining"] = temp[count_column]
+    temp["profit"] = temp[credit_column].fillna(Decimal(0))
     stock = 0
 
     # Calculate profit for each closing (Glattstellung)
@@ -46,14 +46,14 @@ def calc_share_trade_profits(df: pd.DataFrame):
     # Things will get complicated if the trade has several transactions. Profits will be calculated with FIFO.
     for idx in temp.index:
         record = temp.loc[idx]
-        stock_decreased = abs(stock + record["count"]) < abs(stock)
-        stock += record["count"]
+        stock_decreased = abs(stock + record[count_column]) < abs(stock)
+        stock += record[count_column]
         if not stock_decreased:
             # Stock increased, no need to even with previous transactions
             continue
 
         # Transaction found which evens previous transactions
-        count_to_close = record["count"]
+        count_to_close = record[count_column]
         for prev_idx in temp.index[:idx]:
             prev_record = temp.loc[prev_idx]
             if prev_record["remaining"] == 0:
@@ -67,12 +67,12 @@ def calc_share_trade_profits(df: pd.DataFrame):
             count_to_close -= take
 
             # Calculate profit of opening or closing transaction (only transaction with a credit have a profit)
-            if pd.isnull(temp.at[idx, "credit"]):
-                price = np.nansum([record["debit"], record["credit"]]) / record["count"] * take
-                temp.at[prev_idx, "profit"] += price
+            if pd.isnull(temp.at[idx, credit_column]):
+                price = np.nansum([record[debit_column], record[credit_column]]) / record[count_column] * take
+                temp.at[prev_idx, "profit"] += Decimal(price)
             else:
-                prev_price = np.nansum([prev_record["debit"], prev_record["credit"]]) / prev_record["count"] * take
-                temp.at[idx, "profit"] -= prev_price
+                prev_price = np.nansum([prev_record[debit_column], prev_record[credit_column]]) / prev_record[count_column] * take
+                temp.at[idx, "profit"] -= Decimal(prev_price)
 
             if count_to_close == 0:
                 break
