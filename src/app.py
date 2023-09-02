@@ -101,10 +101,35 @@ def read_statement_file(file: io.TextIOBase) -> pd.DataFrame:
 
 
 def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns: list[str]):
+    background_color = ["background-color: White", "background-color: GhostWhite"]
+
+    def alternate_background(row):
+        return [background_color[row["TradeSequence"] % 2]] * len(row)
+
     for number_column in number_columns:
         df[number_column] = df[number_column].apply(lambda x: None if pd.isnull(x) else float(round(x, 2)))
     column_config = {date_column: st.column_config.DateColumn() for date_column in date_columns}
-    st.dataframe(df, hide_index=True, column_config=column_config)
+
+    if "Trade" in df.columns:
+        # Transform column Trade into a sequence, so we can switch the background whenever a different trade is displayed
+        # Example:
+        # Trade  Action
+        # 0      Buy
+        # 0      Sell
+        # 2      Buy
+        # 5      Buy
+        # Goal:
+        # TradeSequence  Action
+        # 0              Buy
+        # 0              Sell
+        # 1              Buy
+        # 2              Buy
+        # This way we are able to use an alternating background for each different trade by calculating TradeSequence % 2
+        df["TradeSequence"] = df.groupby("Trade", as_index=False, group_keys=False, sort=False).ngroup()
+        column_config["TradeSequence"] = None
+        st.dataframe(df.style.apply(alternate_background, axis=1), hide_index=True, column_config=column_config)
+    else:
+        st.dataframe(df, hide_index=True, column_config=column_config)
 
 
 def display_fund_transfer(df_year: pd.DataFrame):
@@ -186,16 +211,18 @@ def display_shares(df: pd.DataFrame, selected_year: str):
                                                          "Credit", "Report_Year", "Activity_Year"])
     df_shares[["Action", "Count", "Name"]] = df_shares.apply(parse_option_share_record, axis=1, result_type="expand")
     df_shares_by_name = df_shares.groupby("Name", as_index=False, group_keys=False, sort=False)
-    trade_ids = df_shares_by_name.ngroup()
     df_shares = df_shares_by_name.apply(add_profits)
-    df_shares["Trade"] = trade_ids
+    df_shares["Trade"] = df_shares_by_name.ngroup() + 1
     df_shares_selected_year = df_shares.query("Activity_Year == @selected_year")
     shares_profits = df_shares_selected_year.query("Profit > 0").get("Profit").sum()
     shares_losses = abs(df_shares_selected_year.query("Profit < 0").get("Profit")).sum()
+    shares_total = shares_profits - shares_losses
 
     st.header("Aktien")
     st.write(f"Gewinne: {locale.currency(shares_profits, grouping=True)}")
     st.write(f"Verluste: {locale.currency(shares_losses, grouping=True)}")
+    st.write(f"Summe: {locale.currency(shares_total, grouping=True)}")
+    st.write(f"Verlusttopf: {locale.currency(abs(min(shares_total, 0)), grouping=True)}")
     with st.expander(f"Kapitalflussrechnung (nur in {selected_year} abgeschlossene Aktiengeschäfte)"):
         closed_trades = df_shares_selected_year.query("Profit != 0").get("Trade").unique()
         display_dataframe((df_shares_selected_year.query("Trade in @closed_trades")
@@ -212,9 +239,8 @@ def display_options(df: pd.DataFrame, selected_year: str):
                                                           "Credit", "Report_Year", "Activity_Year"])
     df_options[["Action", "Count", "Name"]] = df_options.apply(parse_option_share_record, axis=1, result_type="expand")
     df_options_by_name = df_options.groupby("Name", as_index=False, group_keys=False, sort=False)
-    trade_ids = df_options_by_name.ngroup()
     df_options = df_options_by_name.apply(add_profits)
-    df_options["Trade"] = trade_ids
+    df_options["Trade"] = df_options_by_name.ngroup() + 1
     df_options_by_trade = (df_options.filter(["Trade", "Name", "Debit", "Credit", "Count", "Profit", "Activity_Year",
                                               "Action"])
                            .groupby("Trade", sort=False)
@@ -233,11 +259,19 @@ def display_options(df: pd.DataFrame, selected_year: str):
     df_stillhalter_totals = df_stillhalter.filter(["Credit", "Debit", "Profit"]).sum()
     stillhalter_einkuenfte = df_stillhalter_totals["Credit"]
     stillhalter_glattstellungen = abs(df_stillhalter_totals["Debit"])
+    stillhalter_total = stillhalter_einkuenfte - stillhalter_glattstellungen
 
     df_termingeschaefte = df_options_by_trade.query("Action=='Buy'")
     df_termingeschaefte_totals = df_termingeschaefte.filter(["Credit", "Debit", "Profit"]).sum()
     termingeschaefte_einkuenfte = df_termingeschaefte_totals["Credit"]
     termingeschaefte_glattstellungen = abs(df_termingeschaefte_totals["Debit"])
+    termingeschaefte_total = termingeschaefte_einkuenfte - termingeschaefte_glattstellungen
+    termingeschaefte_verlusttopf = 0
+    if termingeschaefte_total < 0:
+        termingeschaefte_verlusttopf = abs(termingeschaefte_total)
+        if stillhalter_total > 0:
+            # Stillhalter profits can even Termingeschäfte losses up to 20,000 €
+            termingeschaefte_verlusttopf -= min([stillhalter_total, 20000, termingeschaefte_verlusttopf])
 
     st.header("Optionen")
     st.subheader("Stillhaltergeschäfte")
@@ -258,6 +292,7 @@ def display_options(df: pd.DataFrame, selected_year: str):
     st.write(f"Einkünfte: {locale.currency(termingeschaefte_einkuenfte, grouping=True)}")
     st.write(f"Glattstellungen: {locale.currency(termingeschaefte_glattstellungen, grouping=True)}")
     st.write(f"Summe: {locale.currency(termingeschaefte_einkuenfte - termingeschaefte_glattstellungen, grouping=True)}")
+    st.write(f"Verlusttopf: {locale.currency(termingeschaefte_verlusttopf, grouping=True)}")
     with st.expander("Kapitalflussrechnung (nur Termingeschäfte)"):
         termingeschaefte_trades = df_termingeschaefte.get("Trade").unique()
         df_options_display = (df_options
