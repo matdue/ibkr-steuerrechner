@@ -9,7 +9,7 @@ import pandas as pd
 import streamlit as st
 
 from iterable_text_io import IterableTextIO
-from utils import calc_share_trade_profits
+from utils import calc_share_trade_profits, calc_option_trade_profits
 
 RECORD_INTEREST = re.compile(r"Credit|Debit Interest")
 RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[0-9]{2} [0-9]+(\.[0-9]+)? ([PC])) (\(\w+\))?")
@@ -202,7 +202,7 @@ def display_interests(df_year: pd.DataFrame):
                           ["Report Date", "Activity Date"], ["Debit", "Credit"])
 
 
-def add_profits(df_group, trade_counter: dict):
+def _add_shares_profits(df_group, trade_counter: dict):
     df_profit = calc_share_trade_profits(df_group.filter(["Count", "Credit", "Debit"]),
                                          "Count", "Debit", "Credit")
     df_profit["trade"] = df_profit["start_of_trade"].cumsum() + trade_counter["trade"]
@@ -217,7 +217,7 @@ def display_shares(df: pd.DataFrame, selected_year: str):
                                                          "Credit", "Report_Year", "Activity_Year"])
     df_shares[["Action", "Count", "Name"]] = df_shares.apply(parse_option_share_record, axis=1, result_type="expand")
     df_shares_by_name = df_shares.groupby("Name", as_index=False, group_keys=False, sort=False)
-    df_shares = df_shares_by_name.apply(add_profits, {"trade": 0})
+    df_shares = df_shares_by_name.apply(_add_shares_profits, {"trade": 0})
     df_shares_selected_year = df_shares.query("Activity_Year == @selected_year")
     shares_profits = df_shares_selected_year.query("Profit > 0").get("Profit").sum()
     shares_losses = abs(df_shares_selected_year.query("Profit < 0").get("Profit")).sum()
@@ -242,12 +242,22 @@ def display_shares(df: pd.DataFrame, selected_year: str):
                           ["Report Date", "Activity Date"], ["Debit", "Credit", "Profit"])
 
 
+def _add_options_profits(df_group, trade_counter: dict):
+    df_profit = calc_option_trade_profits(df_group.filter(["Count", "Credit", "Debit"]),
+                                          "Count", "Debit", "Credit")
+    df_profit["trade"] = df_profit["start_of_trade"].cumsum() + trade_counter["trade"]
+    trade_counter["trade"] = df_profit["trade"].max()
+
+    df_group[["Profit", "Trade"]] = df_profit[["profit", "trade"]]
+    return df_group
+
+
 def display_options(df: pd.DataFrame, selected_year: str):
     df_options = df.query("Category == 'option'").filter(["Report Date", "Activity Date", "Description", "Debit",
                                                           "Credit", "Report_Year", "Activity_Year"])
     df_options[["Action", "Count", "Name"]] = df_options.apply(parse_option_share_record, axis=1, result_type="expand")
     df_options_by_name = df_options.groupby("Name", as_index=False, group_keys=False, sort=False)
-    df_options = df_options_by_name.apply(add_profits, {"trade": 0})
+    df_options = df_options_by_name.apply(_add_options_profits, {"trade": 0})
     df_options_by_trade = (df_options.filter(["Trade", "Name", "Debit", "Credit", "Count", "Profit", "Activity_Year",
                                               "Action"])
                            .groupby("Trade", sort=False)
@@ -311,38 +321,12 @@ def display_options(df: pd.DataFrame, selected_year: str):
                           ["Report Date", "Activity Date"], ["Debit", "Credit", "Profit"])
 
 
-    # df_options = df.query("Category == 'option'").copy()
-    # df_options[["is_option", "action", "count", "underlying"]] = df_options.apply(parse_option_share_record, axis=1,
-    #                                                                               result_type="expand")
-    # df_options_by_underlying = df_options.filter(["underlying", "Debit", "Credit", "count", "Report Date", "Report_Year", "action"]).groupby("underlying").agg(
-    #     Credit=("Credit", "sum"),
-    #     Debit=("Debit", "sum"),
-    #     Count=("count", "sum"),
-    #     Action=("action", "first"),
-    #     Open=("Report Date", "first"),
-    #     Close=("Report Date", "last"),
-    #     OpenYear=("Report_Year", "first"),
-    #     CloseYear=("Report_Year", "last")).query("Open.dt.year==2022")
-    # df_stillhalter = df_options_by_underlying.query("Action=='Sell'")
-    # df_stillhalter_totals = df_stillhalter.filter(["Credit", "Debit"]).sum()
-    # df_termingeschaefte = df_options_by_underlying.query("Action=='Buy'")
-    # df_termingeschaefte_totals = df_termingeschaefte.filter(["Credit", "Debit"]).sum()
-    #
-    # stillhalter_einkuenfte = df_stillhalter_totals["Credit"]
-    # stillhalter_glattstellungen = abs(df_stillhalter_totals["Debit"])
-    # termingeschaefte_einkuenfte = df_termingeschaefte_totals["Credit"]
-    # termingeschaefte_glattstellungen = abs(df_termingeschaefte_totals["Debit"])
-    #
-    # st.header("Optionen")
-    # st.subheader("Stillhaltergeschäfte")
-    # st.write(f"Einkünfte: {locale.currency(stillhalter_einkuenfte, grouping=True)}")
-    # st.write(f"Glattstellungen: {locale.currency(stillhalter_glattstellungen, grouping=True)}")
-    # st.subheader("Termingeschäfte")
-    # st.write(f"Einkünfte: {locale.currency(termingeschaefte_einkuenfte, grouping=True)}")
-    # st.write(f"Glattstellungen: {locale.currency(termingeschaefte_glattstellungen, grouping=True)}")
-    # with st.expander("Auszug"):
-    #     display_dataframe(df_options.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit"]),
-    #                       ["Report Date", "Activity Date"], ["Debit", "Credit"])
+def display_other(df_year: pd.DataFrame):
+    st.header("Rest")
+    df_other = df_year.query("Category == 'other'")
+    with st.expander("Kapitalflussrechnung (restliche Posten)"):
+        display_dataframe(df_other.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit"]),
+                          ["Report Date", "Activity Date"], ["Debit", "Credit"])
 
 
 def main():
@@ -381,6 +365,7 @@ def main():
     display_interests(df_year)
     display_shares(df_year, selected_year)
     display_options(df_year, selected_year)
+    display_other(df_year)
 
 
 if __name__ == "__main__":
