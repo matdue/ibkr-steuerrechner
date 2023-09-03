@@ -12,7 +12,7 @@ def calc_share_trade_profits(df: pd.DataFrame, count_column: str, debit_column: 
     debit: Total purchase price (negative number)
     credit: Total selling price (positive number)
 
-    The result is a series with realized profits for all sales.
+    The result is a data frame with realized profits for all sales and a boolean which indicates the start of a trade.
 
     All numbers will be converted to decimals internally before doing the calculation.
 
@@ -25,7 +25,7 @@ def calc_share_trade_profits(df: pd.DataFrame, count_column: str, debit_column: 
     then 200, then 50 shares. Profit is calculated using FIFO method.
 
     :param df: Pandas DataFrame with data from a statements of funds
-    :return: Pandas Series with profits
+    :return: Pandas DataFrame with columns "profit" and "start_of_trade" having the same index as input data frame
     """
     # Create a temporary data frame with relevant columns only and add the following:
     # remaining: Remaining number of shares of this purchase; positive number, gets smaller with each processed sale until 0
@@ -37,7 +37,9 @@ def calc_share_trade_profits(df: pd.DataFrame, count_column: str, debit_column: 
     temp[debit_column] = temp[debit_column].fillna(Decimal("NaN")).apply(Decimal)
     temp["remaining"] = temp[count_column]
     temp["profit"] = temp[credit_column].fillna(Decimal(0))
+    temp["start_of_trade"] = False
     stock = 0
+    is_in_trade = False  # If false, the next record is the start of a trade
 
     # Calculate profit for each closing (Glattstellung)
     # A profit is generated on each sale as money will flow to the customer at this time and is taxable.
@@ -46,6 +48,10 @@ def calc_share_trade_profits(df: pd.DataFrame, count_column: str, debit_column: 
     # Things will get complicated if the trade has several transactions. Profits will be calculated with FIFO.
     for idx in temp.index:
         record = temp.loc[idx]
+        if not is_in_trade:
+            temp.at[idx, "start_of_trade"] = True
+            is_in_trade = True
+
         stock_decreased = abs(stock + record[count_column]) < abs(stock)
         stock += record[count_column]
         if not stock_decreased:
@@ -77,7 +83,10 @@ def calc_share_trade_profits(df: pd.DataFrame, count_column: str, debit_column: 
             if count_to_close == 0:
                 break
 
-    return temp["profit"]
+        if stock == 0:
+            is_in_trade = False
+
+    return temp.filter(["profit", "start_of_trade"])
 
 
 def __calc_share_trade_profits(df: pd.DataFrame):

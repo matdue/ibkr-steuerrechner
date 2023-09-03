@@ -127,7 +127,9 @@ def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns:
         # This way we are able to use an alternating background for each different trade by calculating TradeSequence % 2
         df["TradeSequence"] = df.groupby("Trade", as_index=False, group_keys=False, sort=False).ngroup()
         column_config["TradeSequence"] = None
-        st.dataframe(df.style.apply(alternate_background, axis=1), hide_index=True, column_config=column_config)
+        date_format = {date_column: "{:%Y-%m-%d}" for date_column in date_columns}
+        st.dataframe(df.style.apply(alternate_background, axis=1).format(date_format), hide_index=True,
+                     column_config=column_config)
     else:
         st.dataframe(df, hide_index=True, column_config=column_config)
 
@@ -200,9 +202,13 @@ def display_interests(df_year: pd.DataFrame):
                           ["Report Date", "Activity Date"], ["Debit", "Credit"])
 
 
-def add_profits(df_group):
-    df_group["Profit"] = calc_share_trade_profits(df_group.filter(["Count", "Credit", "Debit"]),
-                                                  "Count", "Debit", "Credit")
+def add_profits(df_group, trade_counter: dict):
+    df_profit = calc_share_trade_profits(df_group.filter(["Count", "Credit", "Debit"]),
+                                         "Count", "Debit", "Credit")
+    df_profit["trade"] = df_profit["start_of_trade"].cumsum() + trade_counter["trade"]
+    trade_counter["trade"] = df_profit["trade"].max()
+
+    df_group[["Profit", "Trade"]] = df_profit[["profit", "trade"]]
     return df_group
 
 
@@ -211,8 +217,7 @@ def display_shares(df: pd.DataFrame, selected_year: str):
                                                          "Credit", "Report_Year", "Activity_Year"])
     df_shares[["Action", "Count", "Name"]] = df_shares.apply(parse_option_share_record, axis=1, result_type="expand")
     df_shares_by_name = df_shares.groupby("Name", as_index=False, group_keys=False, sort=False)
-    df_shares = df_shares_by_name.apply(add_profits)
-    df_shares["Trade"] = df_shares_by_name.ngroup() + 1
+    df_shares = df_shares_by_name.apply(add_profits, {"trade": 0})
     df_shares_selected_year = df_shares.query("Activity_Year == @selected_year")
     shares_profits = df_shares_selected_year.query("Profit > 0").get("Profit").sum()
     shares_losses = abs(df_shares_selected_year.query("Profit < 0").get("Profit")).sum()
@@ -225,12 +230,15 @@ def display_shares(df: pd.DataFrame, selected_year: str):
     st.write(f"Verlusttopf: {locale.currency(abs(min(shares_total, 0)), grouping=True)}")
     with st.expander(f"Kapitalflussrechnung (nur in {selected_year} abgeschlossene Aktiengeschäfte)"):
         closed_trades = df_shares_selected_year.query("Profit != 0").get("Trade").unique()
-        display_dataframe((df_shares_selected_year.query("Trade in @closed_trades")
-                           .filter(["Report Date", "Activity Date", "Description", "Count", "Name", "Debit", "Credit", "Profit"])),
+        display_dataframe(df_shares_selected_year.query("Trade in @closed_trades")
+                          .reindex(columns=["Trade", "Report Date", "Activity Date", "Description", "Count", "Name", "Debit", "Credit", "Profit"])
+                          .sort_values(["Trade", "Report Date"]),
                           ["Report Date", "Activity Date"], ["Debit", "Credit", "Profit"])
 
     with st.expander("Kapitalflussrechnung (nur Aktiengeschäfte)"):
-        display_dataframe(df_shares.filter(["Report Date", "Activity Date", "Description", "Count", "Name", "Debit", "Credit", "Profit"]),
+        display_dataframe(df_shares
+                          .reindex(columns=["Trade", "Report Date", "Activity Date", "Description", "Count", "Name", "Debit", "Credit", "Profit"])
+                          .sort_values(["Trade", "Report Date"]),
                           ["Report Date", "Activity Date"], ["Debit", "Credit", "Profit"])
 
 
@@ -239,8 +247,7 @@ def display_options(df: pd.DataFrame, selected_year: str):
                                                           "Credit", "Report_Year", "Activity_Year"])
     df_options[["Action", "Count", "Name"]] = df_options.apply(parse_option_share_record, axis=1, result_type="expand")
     df_options_by_name = df_options.groupby("Name", as_index=False, group_keys=False, sort=False)
-    df_options = df_options_by_name.apply(add_profits)
-    df_options["Trade"] = df_options_by_name.ngroup() + 1
+    df_options = df_options_by_name.apply(add_profits, {"trade": 0})
     df_options_by_trade = (df_options.filter(["Trade", "Name", "Debit", "Credit", "Count", "Profit", "Activity_Year",
                                               "Action"])
                            .groupby("Trade", sort=False)
