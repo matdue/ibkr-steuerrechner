@@ -10,7 +10,7 @@ def calc_share_trade_profits(df: pd.DataFrame, count_column: str, debit_column: 
     The data frame must have the following columns:
     count: Number of traded shares, positive numbers meaning a purchase and negative number meaning a sale.
     debit: Total purchase price (negative number)
-    credit: Total selling price (positive number)
+    credit: Total sales price (positive number)
 
     The result is a data frame with realized profits for all sales and a boolean which indicates the start of a trade.
 
@@ -25,6 +25,9 @@ def calc_share_trade_profits(df: pd.DataFrame, count_column: str, debit_column: 
     then 200, then 50 shares. Profit is calculated using FIFO method.
 
     :param df: Pandas DataFrame with data from a statements of funds
+    :param count_column: Name of column which contains the number of trades shares
+    :param debit_column: Name of column which contains the total purchase price (negative number)
+    :param credit_column: Name of column which contains the total sales price (positive number)
     :return: Pandas DataFrame with columns "profit" and "start_of_trade" having the same index as input data frame
     """
     # Create a temporary data frame with relevant columns only and add the following:
