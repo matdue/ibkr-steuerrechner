@@ -3,7 +3,6 @@ import locale
 import re
 from dataclasses import dataclass, asdict
 from decimal import Decimal
-from typing import Optional
 
 import pandas as pd
 import streamlit as st
@@ -16,29 +15,22 @@ RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|
 RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9]+) (.*?)( \(\w+\))?$")
 
 
-def categorize_statement_record(record: pd.Series) -> tuple[str, Optional[str]]:
+def categorize_statement_record(record: pd.Series) -> str:
     description = record["Description"]
     if description in ["Opening Balance", "Closing Balance"]:
-        return "balance", None
-
+        return "balance"
     if description == "Electronic Fund Transfer":
-        return "transfer", None
-
+        return "transfer"
     if "Cash Dividend" in description:
-        if description.endswith(" (Ordinary Dividend)"):
-            return "dividend", "ordinary"
-        if description.endswith(" Tax"):
-            return "dividend", "tax"
-        return "dividend", "other"
-
+        return "dividend"
     if RECORD_INTEREST.search(description):
-        return "interest", None
+        return "interest"
     if RECORD_OPTION.match(description):
-        return "option", None
+        return "option"
     if RECORD_SHARES.match(description):
-        return "shares", None
+        return "shares"
 
-    return "other", None
+    return "other"
 
 
 @dataclass
@@ -59,6 +51,18 @@ def parse_option_share_record(record: pd.Series) -> dict:
     match = RECORD_SHARES.match(description)
     if match is not None:
         return asdict(FinancialAction(match.group(1), int(match.group(2)), match.group(3)))
+
+
+def parse_dividend_record(record: pd.Series) -> str:
+    description = record["Description"]
+    if type(description) != str:
+        return "other"
+    if description.endswith(" (Ordinary Dividend)"):
+        return "ordinary"
+    if description.endswith(" Tax"):
+        return "tax"
+
+    return "other"
 
 
 def read_statement_file(file: io.TextIOBase) -> pd.DataFrame:
@@ -149,19 +153,22 @@ def display_fund_transfer(df_year: pd.DataFrame):
 def display_dividends(df_year: pd.DataFrame, df_year_corrections: pd.DataFrame, selected_year: str):
     st.header("Dividenden")
     df_dividend = df_year.query("Category == 'dividend'")
+    df_dividend["DividendType"] = df_dividend.apply(parse_dividend_record, axis=1)
     df_dividend_corrections = df_year_corrections.query("Category == 'dividend'")
-    ordinary_dividends = df_dividend.query("Subcategory == 'ordinary'")
-    ordinary_dividends_corrections = df_dividend_corrections.query("Subcategory == 'ordinary'")
+    df_dividend_corrections["DividendType"] = df_dividend_corrections.apply(parse_dividend_record, axis=1)
+
+    ordinary_dividends = df_dividend.query("DividendType == 'ordinary'")
+    ordinary_dividends_corrections = df_dividend_corrections.query("DividendType == 'ordinary'")
     earned_dividends = ordinary_dividends["Sum"].sum()
     earned_dividends_corrections = ordinary_dividends_corrections["Sum"].sum()
 
-    taxes = df_dividend.query("Subcategory == 'tax'")
-    taxes_corrections = df_dividend_corrections.query("Subcategory == 'tax'")
+    taxes = df_dividend.query("DividendType == 'tax'")
+    taxes_corrections = df_dividend_corrections.query("DividendType == 'tax'")
     withheld_taxes = taxes["Sum"].sum()
     withheld_taxes_corrections = taxes_corrections["Sum"].sum()
 
-    others = df_dividend.query("Subcategory == 'other'")
-    others_corrections = df_dividend_corrections.query("Subcategory == 'other'")
+    others = df_dividend.query("DividendType == 'other'")
+    others_corrections = df_dividend_corrections.query("DividendType == 'other'")
     other_dividends = others["Sum"].sum()
     other_dividends_corrections = others_corrections["Sum"].sum()
 
@@ -331,6 +338,7 @@ def display_other(df_year: pd.DataFrame):
 
 def main():
     locale.setlocale(locale.LC_ALL, "de_DE.utf8")
+    pd.options.mode.copy_on_write = True
 
     st.set_page_config("IBKR Steuerrechner", layout="wide")
     st.title("Steuerrechner für Interactive Brokers")
@@ -353,11 +361,11 @@ def main():
         return
 
     st.header(f"Ergebnis für das Jahr {selected_year}")
-    df[["Category", "Subcategory"]] = df.apply(categorize_statement_record, axis=1, result_type="expand")
+    df["Category"] = df.apply(categorize_statement_record, axis=1)
     df_year = df.query("Report_Year == @selected_year and Activity_Year == @selected_year")
     df_year_corrections = df.query("Report_Year > @selected_year and Activity_Year == @selected_year")
     with st.expander("Komplette Kapitalflussrechnung"):
-        display_dataframe(df.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit", "Category", "Subcategory"]),
+        display_dataframe(df.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit", "Category"]),
                           ["Report Date", "Activity Date"], ["Debit", "Credit"])
 
     display_fund_transfer(df_year)
