@@ -8,7 +8,7 @@ import pandas as pd
 import streamlit as st
 
 from iterable_text_io import IterableTextIO
-from utils import calc_share_trade_profits, calc_option_trade_profits
+from utils import calc_share_trade_profits
 
 RECORD_INTEREST = re.compile(r"Credit|Debit Interest")
 RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[0-9]{2} [0-9]+(\.[0-9]+)? ([PC])) (\(\w+\))?")
@@ -132,10 +132,15 @@ def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns:
         df["TradeSequence"] = df.groupby("Trade", as_index=False, group_keys=False, sort=False).ngroup()
         column_config["TradeSequence"] = None
         date_format = {date_column: "{:%Y-%m-%d}" for date_column in date_columns}
-        st.dataframe(df.style.apply(alternate_background, axis=1).format(date_format), hide_index=True,
-                     column_config=column_config)
+        number_format = {number_column: lambda x: locale.currency(x, grouping=True) for number_column in number_columns}
+        st.dataframe(df.style.apply(alternate_background, axis=1).format(date_format | number_format),
+                     hide_index=True, column_config=column_config)
     else:
-        st.dataframe(df, hide_index=True, column_config=column_config)
+        date_format = {date_column: lambda x: None if pd.isnull(x) else x.strftime("%x")
+                       for date_column in date_columns}
+        number_format = {number_column: lambda x: None if x is None else locale.currency(x, grouping=True)
+                         for number_column in number_columns}
+        st.dataframe(df.style.format(date_format | number_format), hide_index=True, column_config=column_config)
 
 
 def display_fund_transfer(df_year: pd.DataFrame):
@@ -250,8 +255,8 @@ def display_shares(df: pd.DataFrame, selected_year: str):
 
 
 def _add_options_profits(df_group, trade_counter: dict):
-    df_profit = calc_option_trade_profits(df_group.filter(["Count", "Credit", "Debit"]),
-                                          "Count", "Debit", "Credit")
+    df_profit = calc_share_trade_profits(df_group.filter(["Count", "Credit", "Debit"]),
+                                         "Count", "Debit", "Credit")
     df_profit["trade"] = df_profit["start_of_trade"].cumsum() + trade_counter["trade"]
     trade_counter["trade"] = df_profit["trade"].max()
 
