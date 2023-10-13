@@ -1,9 +1,11 @@
 import io
-import locale
 import re
 from dataclasses import dataclass, asdict
 from decimal import Decimal
 
+import babel
+import babel.dates
+import babel.numbers
 import pandas as pd
 import streamlit as st
 
@@ -13,6 +15,20 @@ from utils import calc_share_trade_profits
 RECORD_INTEREST = re.compile(r"Credit|Debit Interest")
 RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[0-9]{2} [0-9]+(\.[0-9]+)? ([PC])) (\(\w+\))?")
 RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9]+) (.*?)( \(\w+\))?$")
+
+current_locale = babel.Locale("de_DE")
+
+
+def format_currency(x):
+    if pd.isnull(x):
+        return None
+    return babel.numbers.format_currency(x, "EUR", locale=current_locale)
+
+
+def format_date(x):
+    if pd.isnull(x):
+        return None
+    return babel.dates.format_date(x, locale=current_locale)
 
 
 def categorize_statement_record(record: pd.Series) -> str:
@@ -110,9 +126,13 @@ def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns:
     def alternate_background(row):
         return [background_color[row["TradeSequence"] % 2]] * len(row)
 
+    # Convert decimals to floats as the dataframe view is unable to handle decimals properly
     for number_column in number_columns:
         df[number_column] = df[number_column].apply(lambda x: None if pd.isnull(x) else float(round(x, 2)))
+    
     column_config = {date_column: st.column_config.DateColumn() for date_column in date_columns}
+    date_format = {date_column: lambda x: format_date(x) for date_column in date_columns}
+    number_format = {number_column: lambda x: format_currency(x) for number_column in number_columns}
 
     if "Trade" in df.columns:
         # Transform column Trade into a sequence, so we can switch the background whenever a different trade is displayed
@@ -131,15 +151,9 @@ def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns:
         # This way we are able to use an alternating background for each different trade by calculating TradeSequence % 2
         df["TradeSequence"] = df.groupby("Trade", as_index=False, group_keys=False, sort=False).ngroup()
         column_config["TradeSequence"] = None
-        date_format = {date_column: "{:%Y-%m-%d}" for date_column in date_columns}
-        number_format = {number_column: lambda x: locale.currency(x, grouping=True) for number_column in number_columns}
         st.dataframe(df.style.apply(alternate_background, axis=1).format(date_format | number_format),
                      hide_index=True, column_config=column_config)
     else:
-        date_format = {date_column: lambda x: None if pd.isnull(x) else x.strftime("%x")
-                       for date_column in date_columns}
-        number_format = {number_column: lambda x: None if x is None else locale.currency(x, grouping=True)
-                         for number_column in number_columns}
         st.dataframe(df.style.format(date_format | number_format), hide_index=True, column_config=column_config)
 
 
@@ -148,8 +162,8 @@ def display_fund_transfer(df_year: pd.DataFrame):
     df_transfer = df_year.query("Category == 'transfer'")
     deposited_funds = df_transfer["Credit"].sum()
     withdrawn_funds = df_transfer["Debit"].sum()
-    st.write(f"Einzahlungen: {locale.currency(deposited_funds, grouping=True)}")
-    st.write(f"Auszahlungen: {locale.currency(withdrawn_funds, grouping=True)}")
+    st.write(f"Einzahlungen: {format_currency(deposited_funds)}")
+    st.write(f"Auszahlungen: {format_currency(withdrawn_funds)}")
     with st.expander("Kapitalflussrechnung (nur Ein- und Auszahlungen)"):
         display_dataframe(df_transfer.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit"]),
                           ["Report Date", "Activity Date"], ["Debit", "Credit"])
@@ -179,21 +193,21 @@ def display_dividends(df_year: pd.DataFrame, df_year_corrections: pd.DataFrame, 
 
     st.subheader("Gewöhnliche Dividenden")
     if earned_dividends_corrections:
-        st.write(f"Summe {selected_year}: {locale.currency(earned_dividends, grouping=True)}")
-        st.write(f"Korrektur: {locale.currency(earned_dividends_corrections, grouping=True)}")
-    st.write(f"Summe: {locale.currency(earned_dividends+earned_dividends_corrections, grouping=True)}")
+        st.write(f"Summe {selected_year}: {format_currency(earned_dividends)}")
+        st.write(f"Korrektur: {format_currency(earned_dividends_corrections)}")
+    st.write(f"Summe: {format_currency(earned_dividends + earned_dividends_corrections)}")
 
     st.subheader("Quellensteuer")
     if withheld_taxes_corrections:
-        st.write(f"Summe {selected_year}: {locale.currency(withheld_taxes * (-1), grouping=True)}")
-        st.write(f"Korrektur: {locale.currency(withheld_taxes_corrections * (-1), grouping=True)}")
-    st.write(f"Summe: {locale.currency((withheld_taxes+withheld_taxes_corrections) * (-1), grouping=True)}")
+        st.write(f"Summe {selected_year}: {format_currency(withheld_taxes * (-1))}")
+        st.write(f"Korrektur: {format_currency(withheld_taxes_corrections * (-1))}")
+    st.write(f"Summe: {format_currency((withheld_taxes + withheld_taxes_corrections) * (-1))}")
 
     if other_dividends or other_dividends_corrections:
         st.subheader("Andere Zahlungen")
-        st.write(f"Summe {selected_year}: {locale.currency(other_dividends, grouping=True)}")
-        st.write(f"Korrektur: {locale.currency(other_dividends_corrections, grouping=True)}")
-        st.write(f"Summe: {locale.currency(other_dividends+other_dividends_corrections, grouping=True)}")
+        st.write(f"Summe {selected_year}: {format_currency(other_dividends)}")
+        st.write(f"Korrektur: {format_currency(other_dividends_corrections)}")
+        st.write(f"Summe: {format_currency(other_dividends + other_dividends_corrections)}")
 
     with st.expander("Kapitalflussrechnung (nur Dividenden)"):
         display_dataframe((pd.concat([df_dividend, df_dividend_corrections])
@@ -206,9 +220,9 @@ def display_interests(df_year: pd.DataFrame):
     df_interests = df_year.query("Category == 'interest'")
     earned_interests = df_interests["Credit"].sum()
     payed_interests = abs(df_interests["Debit"].sum())
-    st.write(f"Einnahmen: {locale.currency(earned_interests, grouping=True)}")
-    st.write(f"Ausgaben: {locale.currency(payed_interests, grouping=True)}")
-    st.write(f"Summe: {locale.currency(earned_interests - payed_interests, grouping=True)}")
+    st.write(f"Einnahmen: {format_currency(earned_interests)}")
+    st.write(f"Ausgaben: {format_currency(payed_interests)}")
+    st.write(f"Summe: {format_currency(earned_interests - payed_interests)}")
     with st.expander("Kapitalflussrechnung (nur Zinsen)"):
         display_dataframe(df_interests.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit"]),
                           ["Report Date", "Activity Date"], ["Debit", "Credit"])
@@ -236,10 +250,10 @@ def display_shares(df: pd.DataFrame, selected_year: str):
     shares_total = shares_profits - shares_losses
 
     st.header("Aktien")
-    st.write(f"Gewinne: {locale.currency(shares_profits, grouping=True)}")
-    st.write(f"Verluste: {locale.currency(shares_losses, grouping=True)}")
-    st.write(f"Summe: {locale.currency(shares_total, grouping=True)}")
-    st.write(f"Verlusttopf: {locale.currency(abs(min(shares_total, 0)), grouping=True)}")
+    st.write(f"Gewinne: {format_currency(shares_profits)}")
+    st.write(f"Verluste: {format_currency(shares_losses)}")
+    st.write(f"Summe: {format_currency(shares_total)}")
+    st.write(f"Verlusttopf: {format_currency(abs(min(shares_total, 0)))}")
     with st.expander(f"Kapitalflussrechnung (nur in {selected_year} abgeschlossene Aktiengeschäfte)"):
         closed_trades = df_shares_selected_year.query("Profit != 0").get("Trade").unique()
         display_dataframe(df_shares_selected_year.query("Trade in @closed_trades")
@@ -304,9 +318,9 @@ def display_options(df: pd.DataFrame, selected_year: str):
 
     st.header("Optionen")
     st.subheader("Stillhaltergeschäfte")
-    st.write(f"Einkünfte: {locale.currency(stillhalter_einkuenfte, grouping=True)}")
-    st.write(f"Glattstellungen: {locale.currency(stillhalter_glattstellungen, grouping=True)}")
-    st.write(f"Summe: {locale.currency(stillhalter_einkuenfte - stillhalter_glattstellungen, grouping=True)}")
+    st.write(f"Einkünfte: {format_currency(stillhalter_einkuenfte)}")
+    st.write(f"Glattstellungen: {format_currency(stillhalter_glattstellungen)}")
+    st.write(f"Summe: {format_currency(stillhalter_einkuenfte - stillhalter_glattstellungen)}")
     with st.expander("Kapitalflussrechnung (nur Stillhaltergeschäfte)"):
         stillhalter_trades = df_stillhalter.get("Trade").unique()
         df_options_display = (df_options
@@ -318,10 +332,10 @@ def display_options(df: pd.DataFrame, selected_year: str):
                           ["Report Date", "Activity Date"], ["Debit", "Credit", "Profit"])
 
     st.subheader("Termingeschäfte")
-    st.write(f"Einkünfte: {locale.currency(termingeschaefte_einkuenfte, grouping=True)}")
-    st.write(f"Glattstellungen: {locale.currency(termingeschaefte_glattstellungen, grouping=True)}")
-    st.write(f"Summe: {locale.currency(termingeschaefte_einkuenfte - termingeschaefte_glattstellungen, grouping=True)}")
-    st.write(f"Verlusttopf: {locale.currency(termingeschaefte_verlusttopf, grouping=True)}")
+    st.write(f"Einkünfte: {format_currency(termingeschaefte_einkuenfte)}")
+    st.write(f"Glattstellungen: {format_currency(termingeschaefte_glattstellungen)}")
+    st.write(f"Summe: {format_currency(termingeschaefte_einkuenfte - termingeschaefte_glattstellungen)}")
+    st.write(f"Verlusttopf: {format_currency(termingeschaefte_verlusttopf)}")
     with st.expander("Kapitalflussrechnung (nur Termingeschäfte)"):
         termingeschaefte_trades = df_termingeschaefte.get("Trade").unique()
         df_options_display = (df_options
@@ -342,7 +356,6 @@ def display_other(df_year: pd.DataFrame):
 
 
 def main():
-    locale.setlocale(locale.LC_ALL, "de_DE.utf8")
     pd.options.mode.copy_on_write = True
 
     st.set_page_config("IBKR Steuerrechner", layout="wide")
