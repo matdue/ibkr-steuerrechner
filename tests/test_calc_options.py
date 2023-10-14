@@ -8,6 +8,15 @@ from utils import calc_share_trade_profits
 
 
 class LongTrades(unittest.TestCase):
+    def test_long_expire(self):
+        df = pd.DataFrame([{"count": 100, "credit": None, "debit": -2000},
+                           {"count": -100, "credit": None, "debit": None}])
+        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        assert_frame_equal(result,
+                           pd.DataFrame({"profit": [Decimal(0), Decimal(-2000)],
+                                         "start_of_trade": [True, False]},
+                                        index=result.index))
+
     def test_long_close_no_profit(self):
         df = pd.DataFrame([{"count": 100, "credit": None, "debit": -2000},
                            {"count": -100, "credit": 2000, "debit": None}])
@@ -108,6 +117,15 @@ class LongTrades(unittest.TestCase):
 
 
 class ShortTrades(unittest.TestCase):
+    def test_short_expire(self):
+        df = pd.DataFrame([{"count": -100, "credit": 2000, "debit": None},
+                           {"count": 100, "credit": None, "debit": None}])
+        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        assert_frame_equal(result,
+                           pd.DataFrame({"profit": [Decimal(2000), Decimal(0)],
+                                         "start_of_trade": [True, False]},
+                                        index=result.index))
+
     def test_short_close_no_profit(self):
         df = pd.DataFrame([{"count": -100, "credit": 2000, "debit": None},
                            {"count": 100, "credit": None, "debit": -2000}])

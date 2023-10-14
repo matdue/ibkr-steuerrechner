@@ -14,7 +14,22 @@ from utils import calc_share_trade_profits
 
 RECORD_INTEREST = re.compile(r"Credit|Debit Interest")
 RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[0-9]{2} [0-9]+(\.[0-9]+)? ([PC])) (\(\w+\))?")
-RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9]+) (.*?)( \(\w+\))?$")
+RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9]+) (.*?)\s*(\(\w+\))?$")
+
+COLUMN_NAMES = {
+    "Report Date": "Berichtsdatum",
+    "Activity Date": "Datum der Aktivität",
+    "Description": "Beschreibung",
+    "Debit": "Soll",
+    "Credit": "Haben",
+    "Total": "Betrag",
+    "Category": "Kategorie",
+    "Count": "Anzahl",
+    "Name": "Aktie/Option",
+    "Profit": "Gewinn/Verlust",
+    "Trade": "Trade-Nr.",
+    "Action": "Aktion"
+}
 
 current_locale = babel.Locale("de_DE")
 
@@ -110,7 +125,7 @@ def read_statement_file(file: io.TextIOBase) -> pd.DataFrame:
                          usecols=["Currency", "Report Date" ,"Activity Date", "Description", "Debit", "Credit"],
                          parse_dates=["Report Date", "Activity Date"],
                          converters={"Debit": decimal_from_value, "Credit": decimal_from_value})
-    df["Sum"] = df[["Debit", "Credit"]].sum(axis=1)
+    df["Total"] = df[["Debit", "Credit"]].sum(axis=1)
     df["Report_Year"] = df["Report Date"].dt.year.astype("str")
     df["Activity_Year"] = df["Activity Date"].apply(lambda d: None if pd.isnull(d) else str(d.year))
 
@@ -130,9 +145,17 @@ def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns:
     for number_column in number_columns:
         df[number_column] = df[number_column].apply(lambda x: None if pd.isnull(x) else float(round(x, 2)))
     
-    column_config = {date_column: st.column_config.DateColumn() for date_column in date_columns}
+    column_config = {date_column: st.column_config.DateColumn(COLUMN_NAMES[date_column])
+                     for date_column in date_columns}
+    column_config |= {number_column: st.column_config.NumberColumn(COLUMN_NAMES[number_column])
+                      for number_column in number_columns}
     date_format = {date_column: lambda x: format_date(x) for date_column in date_columns}
     number_format = {number_column: lambda x: format_currency(x) for number_column in number_columns}
+
+    # Rename remaining columns
+    column_config |= {col: COLUMN_NAMES[col]
+                      for col in df.columns
+                      if col not in date_columns and col not in number_columns}
 
     if "Trade" in df.columns:
         # Transform column Trade into a sequence, so we can switch the background whenever a different trade is displayed
@@ -149,12 +172,13 @@ def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns:
         # 1              Buy
         # 2              Buy
         # This way we are able to use an alternating background for each different trade by calculating TradeSequence % 2
-        df["TradeSequence"] = df.groupby("Trade", as_index=False, group_keys=False, sort=False).ngroup()
+        df["TradeSequence"] = df.groupby("Trade", as_index=False, group_keys=True, sort=False).ngroup()
         column_config["TradeSequence"] = None
         st.dataframe(df.style.apply(alternate_background, axis=1).format(date_format | number_format),
                      hide_index=True, column_config=column_config)
     else:
-        st.dataframe(df.style.format(date_format | number_format), hide_index=True, column_config=column_config)
+        st.dataframe(df.style.format(date_format | number_format),
+                     hide_index=True, column_config=column_config)
 
 
 def display_fund_transfer(df_year: pd.DataFrame):
@@ -165,8 +189,8 @@ def display_fund_transfer(df_year: pd.DataFrame):
     st.write(f"Einzahlungen: {format_currency(deposited_funds)}")
     st.write(f"Auszahlungen: {format_currency(withdrawn_funds)}")
     with st.expander("Kapitalflussrechnung (nur Ein- und Auszahlungen)"):
-        display_dataframe(df_transfer.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit"]),
-                          ["Report Date", "Activity Date"], ["Debit", "Credit"])
+        display_dataframe(df_transfer.filter(["Report Date", "Activity Date", "Description", "Total"]),
+                          ["Report Date", "Activity Date"], ["Total"])
 
 
 def display_dividends(df_year: pd.DataFrame, df_year_corrections: pd.DataFrame, selected_year: str):
@@ -178,18 +202,18 @@ def display_dividends(df_year: pd.DataFrame, df_year_corrections: pd.DataFrame, 
 
     ordinary_dividends = df_dividend.query("DividendType == 'ordinary'")
     ordinary_dividends_corrections = df_dividend_corrections.query("DividendType == 'ordinary'")
-    earned_dividends = ordinary_dividends["Sum"].sum()
-    earned_dividends_corrections = ordinary_dividends_corrections["Sum"].sum()
+    earned_dividends = ordinary_dividends["Total"].sum()
+    earned_dividends_corrections = ordinary_dividends_corrections["Total"].sum()
 
     taxes = df_dividend.query("DividendType == 'tax'")
     taxes_corrections = df_dividend_corrections.query("DividendType == 'tax'")
-    withheld_taxes = taxes["Sum"].sum()
-    withheld_taxes_corrections = taxes_corrections["Sum"].sum()
+    withheld_taxes = taxes["Total"].sum()
+    withheld_taxes_corrections = taxes_corrections["Total"].sum()
 
     others = df_dividend.query("DividendType == 'other'")
     others_corrections = df_dividend_corrections.query("DividendType == 'other'")
-    other_dividends = others["Sum"].sum()
-    other_dividends_corrections = others_corrections["Sum"].sum()
+    other_dividends = others["Total"].sum()
+    other_dividends_corrections = others_corrections["Total"].sum()
 
     st.subheader("Gewöhnliche Dividenden")
     if earned_dividends_corrections:
@@ -211,8 +235,8 @@ def display_dividends(df_year: pd.DataFrame, df_year_corrections: pd.DataFrame, 
 
     with st.expander("Kapitalflussrechnung (nur Dividenden)"):
         display_dataframe((pd.concat([df_dividend, df_dividend_corrections])
-                           .filter(["Report Date", "Activity Date", "Description", "Debit", "Credit"])),
-                          ["Report Date", "Activity Date"], ["Debit", "Credit"])
+                           .filter(["Report Date", "Activity Date", "Description", "Total"])),
+                          ["Report Date", "Activity Date"], ["Total"])
 
 
 def display_interests(df_year: pd.DataFrame):
@@ -224,8 +248,8 @@ def display_interests(df_year: pd.DataFrame):
     st.write(f"Ausgaben: {format_currency(payed_interests)}")
     st.write(f"Summe: {format_currency(earned_interests - payed_interests)}")
     with st.expander("Kapitalflussrechnung (nur Zinsen)"):
-        display_dataframe(df_interests.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit"]),
-                          ["Report Date", "Activity Date"], ["Debit", "Credit"])
+        display_dataframe(df_interests.filter(["Report Date", "Activity Date", "Description", "Total"]),
+                          ["Report Date", "Activity Date"], ["Total"])
 
 
 def _add_shares_profits(df_group, trade_counter: dict):
@@ -240,9 +264,9 @@ def _add_shares_profits(df_group, trade_counter: dict):
 
 def display_shares(df: pd.DataFrame, selected_year: str):
     df_shares = df.query("Category == 'shares'").filter(["Report Date", "Activity Date", "Description", "Debit",
-                                                         "Credit", "Report_Year", "Activity_Year"])
+                                                         "Credit", "Total", "Report_Year", "Activity_Year"])
     df_shares[["Action", "Count", "Name"]] = df_shares.apply(parse_option_share_record, axis=1, result_type="expand")
-    df_shares_by_name = df_shares.groupby("Name", as_index=False, group_keys=False, sort=False)
+    df_shares_by_name = df_shares.groupby("Name", as_index=False, group_keys=True, sort=False)
     df_shares = df_shares_by_name.apply(_add_shares_profits, {"trade": 0})
     df_shares_selected_year = df_shares.query("Activity_Year == @selected_year")
     shares_profits = df_shares_selected_year.query("Profit > 0").get("Profit").sum()
@@ -257,15 +281,15 @@ def display_shares(df: pd.DataFrame, selected_year: str):
     with st.expander(f"Kapitalflussrechnung (nur in {selected_year} abgeschlossene Aktiengeschäfte)"):
         closed_trades = df_shares_selected_year.query("Profit != 0").get("Trade").unique()
         display_dataframe(df_shares_selected_year.query("Trade in @closed_trades")
-                          .reindex(columns=["Trade", "Report Date", "Activity Date", "Description", "Count", "Name", "Debit", "Credit", "Profit"])
+                          .reindex(columns=["Trade", "Report Date", "Activity Date", "Description", "Count", "Name", "Total", "Profit"])
                           .sort_values(["Trade", "Report Date"]),
-                          ["Report Date", "Activity Date"], ["Debit", "Credit", "Profit"])
+                          ["Report Date", "Activity Date"], ["Total", "Profit"])
 
     with st.expander("Kapitalflussrechnung (nur Aktiengeschäfte)"):
         display_dataframe(df_shares
-                          .reindex(columns=["Trade", "Report Date", "Activity Date", "Description", "Count", "Name", "Debit", "Credit", "Profit"])
+                          .reindex(columns=["Trade", "Report Date", "Activity Date", "Description", "Count", "Name", "Total", "Profit"])
                           .sort_values(["Trade", "Report Date"]),
-                          ["Report Date", "Activity Date"], ["Debit", "Credit", "Profit"])
+                          ["Report Date", "Activity Date"], ["Total", "Profit"])
 
 
 def _add_options_profits(df_group, trade_counter: dict):
@@ -280,9 +304,9 @@ def _add_options_profits(df_group, trade_counter: dict):
 
 def display_options(df: pd.DataFrame, selected_year: str):
     df_options = df.query("Category == 'option'").filter(["Report Date", "Activity Date", "Description", "Debit",
-                                                          "Credit", "Report_Year", "Activity_Year"])
+                                                          "Credit", "Total", "Report_Year", "Activity_Year"])
     df_options[["Action", "Count", "Name"]] = df_options.apply(parse_option_share_record, axis=1, result_type="expand")
-    df_options_by_name = df_options.groupby("Name", as_index=False, group_keys=False, sort=False)
+    df_options_by_name = df_options.groupby("Name", as_index=False, group_keys=True, sort=False)
     df_options = df_options_by_name.apply(_add_options_profits, {"trade": 0})
     df_options_by_trade = (df_options.filter(["Trade", "Name", "Debit", "Credit", "Count", "Profit", "Activity_Year",
                                               "Action"])
@@ -326,10 +350,10 @@ def display_options(df: pd.DataFrame, selected_year: str):
         df_options_display = (df_options
                               .query("Trade in @stillhalter_trades")
                               .reindex(columns=["Trade", "Report Date", "Activity Date", "Description", "Count", "Name",
-                                                "Action", "Debit", "Credit", "Profit"])
+                                                "Action", "Total", "Profit"])
                               .sort_values(["Trade", "Activity Date"]))
         display_dataframe(df_options_display,
-                          ["Report Date", "Activity Date"], ["Debit", "Credit", "Profit"])
+                          ["Report Date", "Activity Date"], ["Total", "Profit"])
 
     st.subheader("Termingeschäfte")
     st.write(f"Einkünfte: {format_currency(termingeschaefte_einkuenfte)}")
@@ -341,18 +365,18 @@ def display_options(df: pd.DataFrame, selected_year: str):
         df_options_display = (df_options
                               .query("Trade in @termingeschaefte_trades")
                               .reindex(columns=["Trade", "Report Date", "Activity Date", "Description", "Count", "Name",
-                                                "Action", "Debit", "Credit", "Profit"])
+                                                "Action", "Total", "Profit"])
                               .sort_values(["Trade", "Activity Date"]))
         display_dataframe(df_options_display,
-                          ["Report Date", "Activity Date"], ["Debit", "Credit", "Profit"])
+                          ["Report Date", "Activity Date"], ["Total", "Profit"])
 
 
 def display_other(df_year: pd.DataFrame):
     st.header("Rest")
     df_other = df_year.query("Category == 'other'")
     with st.expander("Kapitalflussrechnung (restliche Posten)"):
-        display_dataframe(df_other.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit"]),
-                          ["Report Date", "Activity Date"], ["Debit", "Credit"])
+        display_dataframe(df_other.filter(["Report Date", "Activity Date", "Description", "Total"]),
+                          ["Report Date", "Activity Date"], ["Total"])
 
 
 def main():
@@ -383,14 +407,14 @@ def main():
     df_year = df.query("Report_Year == @selected_year and Activity_Year == @selected_year")
     df_year_corrections = df.query("Report_Year > @selected_year and Activity_Year == @selected_year")
     with st.expander("Komplette Kapitalflussrechnung"):
-        display_dataframe(df.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit", "Category"]),
-                          ["Report Date", "Activity Date"], ["Debit", "Credit"])
+        display_dataframe(df.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit", "Total", "Category"]),
+                          ["Report Date", "Activity Date"], ["Debit", "Credit", "Total"])
 
     display_fund_transfer(df_year)
     display_dividends(df_year, df_year_corrections, selected_year)
     display_interests(df_year)
-    display_shares(df_year, selected_year)
-    display_options(df_year, selected_year)
+    display_shares(df, selected_year)
+    display_options(df, selected_year)
     display_other(df_year)
 
 

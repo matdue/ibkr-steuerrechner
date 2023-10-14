@@ -76,12 +76,20 @@ def calc_share_trade_profits(df: pd.DataFrame, count_column: str, debit_column: 
             count_to_close -= take
 
             # Calculate profit of opening or closing transaction (only transaction with a credit have a profit)
-            if pd.isnull(temp.at[idx, credit_column]):
+            if pd.isnull(temp.at[idx, credit_column]) and not pd.isnull(temp.at[idx, debit_column]):
                 price = np.nansum([record[debit_column], record[credit_column]]) / record[count_column] * take
                 temp.at[prev_idx, "profit"] += Decimal(price)
-            else:
+            elif not pd.isnull(temp.at[idx, credit_column]) and pd.isnull(temp.at[idx, debit_column]):
                 prev_price = np.nansum([prev_record[debit_column], prev_record[credit_column]]) / prev_record[count_column] * take
                 temp.at[idx, "profit"] -= Decimal(prev_price)
+            elif pd.isnull(temp.at[idx, credit_column]) and pd.isnull(temp.at[idx, debit_column]):
+                # Trade expired
+                if pd.isnull(temp.at[prev_idx, credit_column]):
+                    prev_price = np.nansum([prev_record[debit_column], prev_record[credit_column]]) / prev_record[count_column] * take
+                    temp.at[idx, "profit"] -= Decimal(prev_price)
+                else:
+                    price = np.nansum([record[debit_column], record[credit_column]]) / record[count_column] * take
+                    temp.at[prev_idx, "profit"] += Decimal(price)
 
             if count_to_close == 0:
                 break
