@@ -2,66 +2,44 @@ import io
 import re
 from dataclasses import dataclass, asdict
 from decimal import Decimal
+from enum import Enum, auto
 
-import babel
-import babel.dates
-import babel.numbers
 import pandas as pd
 import streamlit as st
 
+from i18n import format_date, format_currency, get_column_name
 from iterable_text_io import IterableTextIO
-from utils import calc_share_trade_profits
+from utils import calc_profits_fifo
 
 RECORD_INTEREST = re.compile(r"Credit|Debit Interest")
 RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[0-9]{2} [0-9]+(\.[0-9]+)? ([PC])) (\(\w+\))?")
 RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9]+) (.*?)\s*(\(\w+\))?$")
 
-COLUMN_NAMES = {
-    "Report Date": "Berichtsdatum",
-    "Activity Date": "Datum der Aktivität",
-    "Description": "Beschreibung",
-    "Debit": "Soll",
-    "Credit": "Haben",
-    "Total": "Betrag",
-    "Category": "Kategorie",
-    "Count": "Anzahl",
-    "Name": "Aktie/Option",
-    "Profit": "Gewinn/Verlust",
-    "Trade": "Trade-Nr.",
-    "Action": "Aktion"
-}
-
-current_locale = babel.Locale("de_DE")
-
-
-def format_currency(x):
-    if pd.isnull(x):
-        return None
-    return babel.numbers.format_currency(x, "EUR", locale=current_locale)
-
-
-def format_date(x):
-    if pd.isnull(x):
-        return None
-    return babel.dates.format_date(x, locale=current_locale)
-
+class Category(Enum):
+    BALANCE = auto()
+    TRANSFER = auto()
+    DIVIDEND = auto()
+    INTEREST = auto()
+    OPTION = auto()
+    SHARES = auto()
+    OTHER = auto()
 
 def categorize_statement_record(record: pd.Series) -> str:
     description = record["Description"]
     if description in ["Opening Balance", "Closing Balance"]:
-        return "balance"
+        return Category.BALANCE.name
     if description == "Electronic Fund Transfer":
-        return "transfer"
+        return Category.TRANSFER.name
     if "Cash Dividend" in description:
-        return "dividend"
+        return Category.DIVIDEND.name
     if RECORD_INTEREST.search(description):
-        return "interest"
+        return Category.INTEREST.name
     if RECORD_OPTION.match(description):
-        return "option"
+        return Category.OPTION.name
     if RECORD_SHARES.match(description):
-        return "shares"
+        return Category.SHARES.name
 
-    return "other"
+    return Category.OTHER.name
 
 
 @dataclass
@@ -84,16 +62,21 @@ def parse_option_share_record(record: pd.Series) -> dict:
         return asdict(FinancialAction(match.group(1), int(match.group(2)), match.group(3)))
 
 
+class DividendType(Enum):
+    ORDINARY = auto()
+    TAX = auto()
+    OTHER = auto()
+
 def parse_dividend_record(record: pd.Series) -> str:
     description = record["Description"]
     if type(description) != str:
-        return "other"
+        return DividendType.OTHER.name
     if description.endswith(" (Ordinary Dividend)"):
-        return "ordinary"
+        return DividendType.ORDINARY.name
     if description.endswith(" Tax"):
-        return "tax"
+        return DividendType.TAX.name
 
-    return "other"
+    return DividendType.OTHER.name
 
 
 def read_statement_file(file: io.TextIOBase) -> pd.DataFrame:
@@ -145,15 +128,16 @@ def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns:
     for number_column in number_columns:
         df[number_column] = df[number_column].apply(lambda x: None if pd.isnull(x) else float(round(x, 2)))
     
-    column_config = {date_column: st.column_config.DateColumn(COLUMN_NAMES[date_column])
+    column_config = {date_column: st.column_config.DateColumn(get_column_name(date_column))
                      for date_column in date_columns}
-    column_config |= {number_column: st.column_config.NumberColumn(COLUMN_NAMES[number_column])
+    column_config |= {number_column: st.column_config.NumberColumn(get_column_name(number_column))
                       for number_column in number_columns}
     date_format = {date_column: lambda x: format_date(x) for date_column in date_columns}
     number_format = {number_column: lambda x: format_currency(x) for number_column in number_columns}
+    formats = date_format | number_format
 
     # Rename remaining columns
-    column_config |= {col: COLUMN_NAMES[col]
+    column_config |= {col: get_column_name(col)
                       for col in df.columns
                       if col not in date_columns and col not in number_columns}
 
@@ -174,16 +158,17 @@ def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns:
         # This way we are able to use an alternating background for each different trade by calculating TradeSequence % 2
         df["TradeSequence"] = df.groupby("Trade", as_index=False, group_keys=True, sort=False).ngroup()
         column_config["TradeSequence"] = None
-        st.dataframe(df.style.apply(alternate_background, axis=1).format(date_format | number_format),
+        st.dataframe(df.style.apply(alternate_background, axis=1).format(formats),
                      hide_index=True, column_config=column_config)
     else:
-        st.dataframe(df.style.format(date_format | number_format),
+        st.dataframe(df.style.format(formats),
                      hide_index=True, column_config=column_config)
 
 
 def display_fund_transfer(df_year: pd.DataFrame):
     st.header("Ein- und Auszahlungen")
-    df_transfer = df_year.query("Category == 'transfer'")
+    st.write("Alle Ein- und Auszahlen werden aufsummiert. Beide Summen dienen nur der Information und sind steuerlich nicht relevant.")
+    df_transfer = df_year.query(f"Category == '{Category.TRANSFER.name}'")
     deposited_funds = df_transfer["Credit"].sum()
     withdrawn_funds = df_transfer["Debit"].sum()
     st.write(f"Einzahlungen: {format_currency(deposited_funds)}")
@@ -195,23 +180,27 @@ def display_fund_transfer(df_year: pd.DataFrame):
 
 def display_dividends(df_year: pd.DataFrame, df_year_corrections: pd.DataFrame, selected_year: str):
     st.header("Dividenden")
-    df_dividend = df_year.query("Category == 'dividend'")
-    df_dividend["DividendType"] = df_dividend.apply(parse_dividend_record, axis=1)
-    df_dividend_corrections = df_year_corrections.query("Category == 'dividend'")
-    df_dividend_corrections["DividendType"] = df_dividend_corrections.apply(parse_dividend_record, axis=1)
+    st.write("""Alle Dividenden werden aufsummiert, die Quellensteuern werden gesondert ausgewiesen. 
+    Manchmal werden Zahlungen und/oder Steuern im Folgejahr korrigiert; 
+    die Korrektur wird, wenn vorhanden, hier gesondert ausgewiesen.""")
+    df_dividend = df_year.query(f"Category == '{Category.DIVIDEND.name}'")
+    df_dividend["DividendType"] = df_dividend.apply(parse_dividend_record, axis=1).astype("category")
+    df_dividend_corrections = df_year_corrections.query(f"Category == '{Category.DIVIDEND.name}'")
+    df_dividend_corrections["DividendType"] = (df_dividend_corrections.apply(parse_dividend_record, axis=1)
+                                               .astype("category"))
 
-    ordinary_dividends = df_dividend.query("DividendType == 'ordinary'")
-    ordinary_dividends_corrections = df_dividend_corrections.query("DividendType == 'ordinary'")
+    ordinary_dividends = df_dividend.query(f"DividendType == '{DividendType.ORDINARY.name}'")
+    ordinary_dividends_corrections = df_dividend_corrections.query(f"DividendType == '{DividendType.ORDINARY.name}'")
     earned_dividends = ordinary_dividends["Total"].sum()
     earned_dividends_corrections = ordinary_dividends_corrections["Total"].sum()
 
-    taxes = df_dividend.query("DividendType == 'tax'")
-    taxes_corrections = df_dividend_corrections.query("DividendType == 'tax'")
+    taxes = df_dividend.query(f"DividendType == '{DividendType.TAX.name}'")
+    taxes_corrections = df_dividend_corrections.query(f"DividendType == '{DividendType.TAX.name}'")
     withheld_taxes = taxes["Total"].sum()
     withheld_taxes_corrections = taxes_corrections["Total"].sum()
 
-    others = df_dividend.query("DividendType == 'other'")
-    others_corrections = df_dividend_corrections.query("DividendType == 'other'")
+    others = df_dividend.query(f"DividendType == '{DividendType.OTHER.name}'")
+    others_corrections = df_dividend_corrections.query(f"DividendType == '{DividendType.OTHER.name}'")
     other_dividends = others["Total"].sum()
     other_dividends_corrections = others_corrections["Total"].sum()
 
@@ -241,7 +230,8 @@ def display_dividends(df_year: pd.DataFrame, df_year_corrections: pd.DataFrame, 
 
 def display_interests(df_year: pd.DataFrame):
     st.header("Zinsen")
-    df_interests = df_year.query("Category == 'interest'")
+    st.write("Alle Zinseinnahmen und -ausgaben werden aufsummiert.")
+    df_interests = df_year.query(f"Category == '{Category.INTEREST.name}'")
     earned_interests = df_interests["Credit"].sum()
     payed_interests = abs(df_interests["Debit"].sum())
     st.write(f"Einnahmen: {format_currency(earned_interests)}")
@@ -252,9 +242,9 @@ def display_interests(df_year: pd.DataFrame):
                           ["Report Date", "Activity Date"], ["Total"])
 
 
-def _add_shares_profits(df_group, trade_counter: dict):
-    df_profit = calc_share_trade_profits(df_group.filter(["Count", "Credit", "Debit"]),
-                                         "Count", "Debit", "Credit")
+def _add_profits(df_group, trade_counter: dict):
+    df_profit = calc_profits_fifo(df_group.filter(["Count", "Credit", "Debit"]),
+                                  "Count", "Debit", "Credit")
     df_profit["trade"] = df_profit["start_of_trade"].cumsum() + trade_counter["trade"]
     trade_counter["trade"] = df_profit["trade"].max()
 
@@ -263,17 +253,27 @@ def _add_shares_profits(df_group, trade_counter: dict):
 
 
 def display_shares(df: pd.DataFrame, selected_year: str):
-    df_shares = df.query("Category == 'shares'").filter(["Report Date", "Activity Date", "Description", "Debit",
-                                                         "Credit", "Total", "Report_Year", "Activity_Year"])
-    df_shares[["Action", "Count", "Name"]] = df_shares.apply(parse_option_share_record, axis=1, result_type="expand")
-    df_shares_by_name = df_shares.groupby("Name", as_index=False, group_keys=True, sort=False)
-    df_shares = df_shares_by_name.apply(_add_shares_profits, {"trade": 0})
-    df_shares_selected_year = df_shares.query("Activity_Year == @selected_year")
-    shares_profits = df_shares_selected_year.query("Profit > 0").get("Profit").sum()
-    shares_losses = abs(df_shares_selected_year.query("Profit < 0").get("Profit")).sum()
-    shares_total = shares_profits - shares_losses
+    df_shares = (df.query(f"Category == '{Category.SHARES.name}'")
+                 .filter(["Report Date", "Activity Date", "Description", "Debit", "Credit", "Total", "Report_Year",
+                          "Activity_Year"]))
+    if not df_shares.empty:
+        df_shares[["Action", "Count", "Name"]] = df_shares.apply(parse_option_share_record, axis=1, result_type="expand")
+        df_shares_by_name = df_shares.groupby("Name", as_index=False, group_keys=True, sort=False)
+        df_shares = df_shares_by_name.apply(_add_profits, {"trade": 0})
+        df_shares_selected_year = df_shares.query("Activity_Year == @selected_year")
+        shares_profits = df_shares_selected_year.query("Profit > 0").get("Profit").sum()
+        shares_losses = abs(df_shares_selected_year.query("Profit < 0").get("Profit")).sum()
+        shares_total = shares_profits - shares_losses
+    else:
+        shares_profits = 0
+        shares_losses = 0
+        shares_total = shares_profits - shares_losses
+        df_shares_selected_year = pd.DataFrame(columns=["Profit", "Trade"])
 
     st.header("Aktien")
+    st.write("""Gewinne und Verluste aus Aktienkäufe, -verkäufe, -andienungen und -ausbuchungen werden nach der FIFO-Methode berechnet und hier ausgewiesen.
+    Käufe und Andienungen werden steuerlich erst dann relevant, wenn die Position durch Verkauf oder Ausbuchung geschlossen wird.
+    Erfolgt die Schließung erst im Folgejahr, wird erst dann ein Gewinn oder Verlust berechnet.""")
     st.write(f"Gewinne: {format_currency(shares_profits)}")
     st.write(f"Verluste: {format_currency(shares_losses)}")
     st.write(f"Summe: {format_currency(shares_total)}")
@@ -292,35 +292,30 @@ def display_shares(df: pd.DataFrame, selected_year: str):
                           ["Report Date", "Activity Date"], ["Total", "Profit"])
 
 
-def _add_options_profits(df_group, trade_counter: dict):
-    df_profit = calc_share_trade_profits(df_group.filter(["Count", "Credit", "Debit"]),
-                                         "Count", "Debit", "Credit")
-    df_profit["trade"] = df_profit["start_of_trade"].cumsum() + trade_counter["trade"]
-    trade_counter["trade"] = df_profit["trade"].max()
-
-    df_group[["Profit", "Trade"]] = df_profit[["profit", "trade"]]
-    return df_group
-
-
 def display_options(df: pd.DataFrame, selected_year: str):
-    df_options = df.query("Category == 'option'").filter(["Report Date", "Activity Date", "Description", "Debit",
-                                                          "Credit", "Total", "Report_Year", "Activity_Year"])
-    df_options[["Action", "Count", "Name"]] = df_options.apply(parse_option_share_record, axis=1, result_type="expand")
-    df_options_by_name = df_options.groupby("Name", as_index=False, group_keys=True, sort=False)
-    df_options = df_options_by_name.apply(_add_options_profits, {"trade": 0})
-    df_options_by_trade = (df_options.filter(["Trade", "Name", "Debit", "Credit", "Count", "Profit", "Activity_Year",
-                                              "Action"])
-                           .groupby("Trade", sort=False)
-                           .agg(Credit=("Credit", "sum"),
-                                Debit=("Debit", "sum"),
-                                Count=("Count", "sum"),
-                                Profit=("Profit", "sum"),
-                                Action=("Action", "first"),
-                                Open=("Activity_Year", "first"),
-                                Close=("Activity_Year", "last"),
-                                Trade=("Trade", "first"),
-                                Name=("Name", "first"))
-                           .query("Open == @selected_year"))
+    df_options = (df.query(f"Category == '{Category.OPTION.name}'")
+                  .filter(["Report Date", "Activity Date", "Description", "Debit", "Credit", "Total", "Report_Year",
+                           "Activity_Year"]))
+    if not df_options.empty:
+        df_options[["Action", "Count", "Name"]] = df_options.apply(parse_option_share_record, axis=1, result_type="expand")
+        df_options_by_name = df_options.groupby("Name", as_index=False, group_keys=True, sort=False)
+        df_options = df_options_by_name.apply(_add_profits, {"trade": 0})
+        df_options_by_trade = (df_options.filter(["Trade", "Name", "Debit", "Credit", "Count", "Profit", "Activity_Year",
+                                                  "Action"])
+                               .groupby("Trade", sort=False)
+                               .agg(Credit=("Credit", "sum"),
+                                    Debit=("Debit", "sum"),
+                                    Count=("Count", "sum"),
+                                    Profit=("Profit", "sum"),
+                                    Action=("Action", "first"),
+                                    Open=("Activity_Year", "first"),
+                                    Close=("Activity_Year", "last"),
+                                    Trade=("Trade", "first"),
+                                    Name=("Name", "first"))
+                               .query("Open == @selected_year"))
+    else:
+        df_options_by_trade = pd.DataFrame(columns=["Action", "Credit", "Debit", "Profit", "Trade"])
+        df_options["Trade"] = None
 
     df_stillhalter = df_options_by_trade.query("Action=='Sell'")
     df_stillhalter_totals = df_stillhalter.filter(["Credit", "Debit", "Profit"]).sum()
@@ -341,6 +336,12 @@ def display_options(df: pd.DataFrame, selected_year: str):
             termingeschaefte_verlusttopf -= min([stillhalter_total, 20000, termingeschaefte_verlusttopf])
 
     st.header("Optionen")
+    st.write("""Gewinne und Verluste aus Optionsgeschäften werden nach der FIFO-Methode berechnet und hier ausgewiesen.
+    Stillhaltergeschäfte sind sofort steuerlich relevant, Termingeschäfte erst mit Schließung der Position.
+    Der Sonderfall Barausgleich wird nicht berücksichtigt.
+    
+    Verluste aus Termingeschäfte können bei Privatpersonen nur beschränkt mit Gewinnen aus Stillhaltergeschäften ausgeglichen werden.
+    Alles über 20.000 € wird in den Verlusttopf gelegt.""")
     st.subheader("Stillhaltergeschäfte")
     st.write(f"Einkünfte: {format_currency(stillhalter_einkuenfte)}")
     st.write(f"Glattstellungen: {format_currency(stillhalter_glattstellungen)}")
@@ -373,7 +374,8 @@ def display_options(df: pd.DataFrame, selected_year: str):
 
 def display_other(df_year: pd.DataFrame):
     st.header("Rest")
-    df_other = df_year.query("Category == 'other'")
+    st.write("Diese Posten konnten keiner Kategorie zugeordnet werden und wurden daher nicht berücksichtigt.")
+    df_other = df_year.query(f"Category == '{Category.OTHER.name}'")
     with st.expander("Kapitalflussrechnung (restliche Posten)"):
         display_dataframe(df_other.filter(["Report Date", "Activity Date", "Description", "Total"]),
                           ["Report Date", "Activity Date"], ["Total"])
@@ -384,7 +386,9 @@ def main():
 
     st.set_page_config("IBKR Steuerrechner", layout="wide")
     st.title("Steuerrechner für Interactive Brokers")
-    st.caption("Zur Berechnung der Steuerschuld von Optionen und Aktiengeschäften")
+    st.caption("Zur Berechnung der Steuerschuld von Optionen- und Aktiengeschäften")
+    st.write("""Die Auswertung ersetzt keine Steuerberatung! Alle Angaben sind ohne Gewähr und dienen nur der Inspiration.
+    Das Ergebnis wird bei Zusammenveranlagung oder in einer GmbH wahrscheinlich nicht richtig sein.""")
 
     # Statement of Funds (Kapitalflussrechnung)
     # TODO: Erklärung ergänzen, wo und wie man das herunterlädt
@@ -403,12 +407,26 @@ def main():
         return
 
     st.header(f"Ergebnis für das Jahr {selected_year}")
-    df["Category"] = df.apply(categorize_statement_record, axis=1)
+    st.write("""Durch Anklicken des unten stehenden Blocks kann dieser aufgeklappt werden.
+             Er enthält alle Posten aus der Kapitalflussrechnung. Jeder Posten wurde einer Kategorie zugeordnet.  
+             Weiter unten werden für jede Kategorie die Posten ausgewertet und aufsummiert.""")
+    df["Category"] = df.apply(categorize_statement_record, axis=1).astype("category")
     df_year = df.query("Report_Year == @selected_year and Activity_Year == @selected_year")
     df_year_corrections = df.query("Report_Year > @selected_year and Activity_Year == @selected_year")
     with st.expander("Komplette Kapitalflussrechnung"):
-        display_dataframe(df.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit", "Total", "Category"]),
+        display_dataframe(df.filter(["Report Date", "Activity Date", "Description", "Debit", "Credit", "Total",
+                                     "Category"]),
                           ["Report Date", "Activity Date"], ["Debit", "Credit", "Total"])
+        st.write("Legende:")
+        st.write(f""" 
+        | Kategorie | Beschreibung |
+        | --------- | ------------ |
+        | {Category.BALANCE.name} | Anfangs- und Schlusssaldo |
+        | {Category.TRANSFER.name} | Ein- und Auszahlungen |
+        | {Category.INTEREST.name} | Zinsen |
+        | {Category.DIVIDEND.name} | Dividenden |
+        | {Category.SHARES.name} | Aktien |
+        | {Category.OPTION.name} | Optionen |""")
 
     display_fund_transfer(df_year)
     display_dividends(df_year, df_year_corrections, selected_year)
