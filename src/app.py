@@ -110,6 +110,7 @@ def read_statement_file(file: io.TextIOBase, filename: str) -> pd.DataFrame:
         # A CSV may contain more than one report, but we are interested in Statement of Funds only
         statement_of_funds_lines = (line for line in file if line.startswith("Statement of Funds,"))
         with IterableTextIO(statement_of_funds_lines) as s:
+            # noinspection PyTypeChecker
             df = pd.read_csv(s,
                              usecols=["Currency", "Report Date" ,"Activity Date", "Description", "Debit", "Credit"],
                              parse_dates=["Report Date", "Activity Date"],
@@ -347,9 +348,8 @@ def display_options(df: pd.DataFrame, selected_year: str):
     st.header("Optionen")
     st.write("""Gewinne und Verluste aus Optionsgeschäften werden nach der FIFO-Methode berechnet und hier ausgewiesen.
     Stillhaltergeschäfte sind sofort steuerlich relevant, Termingeschäfte erst mit Schließung der Position.
-    Der Sonderfall Barausgleich wird nicht berücksichtigt.
-    
-    Verluste aus Termingeschäfte können bei Privatpersonen nur beschränkt mit Gewinnen aus Stillhaltergeschäften ausgeglichen werden.
+    Der Sonderfall Barausgleich wird nicht berücksichtigt.""")
+    st.write("""Verluste aus Termingeschäfte können bei Privatpersonen nur beschränkt mit Gewinnen aus Stillhaltergeschäften ausgeglichen werden.
     Alles über 20.000 € wird in den Verlusttopf gelegt.""")
     st.subheader("Stillhaltergeschäfte")
     st.write(f"Einkünfte: {format_currency(stillhalter_einkuenfte)}")
@@ -397,10 +397,10 @@ def main():
     st.title("Steuerrechner für Interactive Brokers")
     st.caption("Zur Berechnung der Steuerschuld von Optionen- und Aktiengeschäften")
     st.write("Die Auswertung ersetzt keine Steuerberatung! Alle Angaben sind ohne Gewähr und dienen nur der Inspiration.")
+    st.write("Alle hochgeladenen Daten werden auf einem Server in den USA verarbeitet. Sie werden nicht gespeichert.")
 
     # Statement of Funds (Kapitalflussrechnung)
-    # TODO: Erklärung ergänzen, wo und wie man das herunterlädt
-    st.write("""Laden Sie zunächst die Kapitalflussrechnung herunter und speichern Sie sie ab.
+    st.write("""Laden Sie zunächst die Kapitalflussrechnung herunter und speichern Sie sie auf ihrem eigenen Rechner ab.
     Diese finden Sie in der Weboberfläche von Interactive Brokers unter dem Menüpunkt *Performance & Berichte / Kontoauszüge*
     bei den *Benutzerdefinierten Kontoauszügen*. 
     Sofern noch nicht geschehen, definieren Sie einen neuen
