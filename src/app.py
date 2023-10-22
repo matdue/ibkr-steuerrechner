@@ -79,7 +79,11 @@ def parse_dividend_record(record: pd.Series) -> str:
     return DividendType.OTHER.name
 
 
-def read_statement_file(file: io.TextIOBase) -> pd.DataFrame:
+class DataError(Exception):
+    pass
+
+
+def read_statement_file(file: io.TextIOBase, filename: str) -> pd.DataFrame:
     """
     Reads and parses the input field and returns a dataframe with the following columns:
 
@@ -91,6 +95,7 @@ def read_statement_file(file: io.TextIOBase) -> pd.DataFrame:
     Year: Year of report date (duplicated for convenience)
 
     :param file: Input file
+    :param filename: Input file name
     :return: Pandas Dataframe
     """
 
@@ -100,22 +105,26 @@ def read_statement_file(file: io.TextIOBase) -> pd.DataFrame:
             return None
         return Decimal(trimmed_value)
 
-    # Load relevant lines only
-    # A CSV may contain more than one report, but we are interested in Statement of Funds only
-    statement_of_funds_lines = (line for line in file if line.startswith("Statement of Funds,"))
-    with IterableTextIO(statement_of_funds_lines) as s:
-        df = pd.read_csv(s,
-                         usecols=["Currency", "Report Date" ,"Activity Date", "Description", "Debit", "Credit"],
-                         parse_dates=["Report Date", "Activity Date"],
-                         converters={"Debit": decimal_from_value, "Credit": decimal_from_value})
-    df["Total"] = df[["Debit", "Credit"]].sum(axis=1)
-    df["Report_Year"] = df["Report Date"].dt.year.astype("str")
-    df["Activity_Year"] = df["Activity Date"].apply(lambda d: None if pd.isnull(d) else str(d.year))
+    try:
+        # Load relevant lines only
+        # A CSV may contain more than one report, but we are interested in Statement of Funds only
+        statement_of_funds_lines = (line for line in file if line.startswith("Statement of Funds,"))
+        with IterableTextIO(statement_of_funds_lines) as s:
+            df = pd.read_csv(s,
+                             usecols=["Currency", "Report Date" ,"Activity Date", "Description", "Debit", "Credit"],
+                             parse_dates=["Report Date", "Activity Date"],
+                             converters={"Debit": decimal_from_value, "Credit": decimal_from_value})
+        df["Total"] = df[["Debit", "Credit"]].sum(axis=1)
+        df["Report_Year"] = df["Report Date"].dt.year.astype("str")
+        df["Activity_Year"] = df["Activity Date"].apply(lambda d: None if pd.isnull(d) else str(d.year))
 
-    # Skip all records which are not in base currency
-    df = df.query("Currency == 'Base Currency Summary'").drop(columns=["Currency"])
+        # Skip all records which are not in base currency
+        df = df.query("Currency == 'Base Currency Summary'").drop(columns=["Currency"])
 
-    return df
+        return df
+    except Exception:
+        raise DataError(filename)
+
 
 
 def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns: list[str]):
@@ -387,16 +396,33 @@ def main():
     st.set_page_config("IBKR Steuerrechner", layout="wide")
     st.title("Steuerrechner für Interactive Brokers")
     st.caption("Zur Berechnung der Steuerschuld von Optionen- und Aktiengeschäften")
-    st.write("""Die Auswertung ersetzt keine Steuerberatung! Alle Angaben sind ohne Gewähr und dienen nur der Inspiration.
-    Das Ergebnis wird bei Zusammenveranlagung oder in einer GmbH wahrscheinlich nicht richtig sein.""")
+    st.write("Die Auswertung ersetzt keine Steuerberatung! Alle Angaben sind ohne Gewähr und dienen nur der Inspiration.")
 
     # Statement of Funds (Kapitalflussrechnung)
     # TODO: Erklärung ergänzen, wo und wie man das herunterlädt
-    st.write("Laden Sie zunächst die Kapitalflussrechnung (WO?) herunter und speichern Sie sie ab. Anschließend laden Sie sie zur Auswertung hier hoch. Sie können mehrere Dateien auswählen, damit die Historie aus den vergangenenen Jahren berücksichtigt werden kann.")
-    sof_files = st.file_uploader("Kapitalflussrechnung (CSV-Format)", type="csv", accept_multiple_files=True)
-    sof_dfs = [read_statement_file(io.TextIOWrapper(sof_file, "utf-8"))
-               for sof_file in sof_files]
-    if len(sof_dfs) == 0:
+    st.write("""Laden Sie zunächst die Kapitalflussrechnung herunter und speichern Sie sie ab.
+    Diese finden Sie in der Weboberfläche von Interactive Brokers unter dem Menüpunkt *Performance & Berichte / Kontoauszüge*
+    bei den *Benutzerdefinierten Kontoauszügen*. 
+    Sofern noch nicht geschehen, definieren Sie einen neuen
+    benutzerdefinierten Kontoauszug durch einen Klick auf das Plus-Symbol, vergeben einen Namen (z.B. Kapitalflussrechnung)
+    und wählen als einzigen Abschnitt *Kapitalflussrechnung (Statement of Funds)* aus; alle Abschnittseinstellungen
+    werden auf *Nein* bzw. *Keine* gesetzt. 
+    Zum Generieren des Kontoauszugs klicken Sie auf den Start-Pfeil, wählen den gewünschten Zeitraum, stellen die Sprache
+    auf Englisch um, und klicken auf Download bei CSV-Format. Der Zeitraum ist typischerweise ein komplettes, vergangenes
+    Jahr oder *Jahresbeginn bis heute* für das aktuelle Jahr. Ein Auszug umfasst maximal ein Jahr. Es ist empfehlenswert,
+    den Download im PDF-Format zu wiederholen, er kann als Beleg für das Finanzamt dienen. Sichern Sie beide Dateien,
+    dann können sie bei zukünftigen Auswertungen darauf zurückgreifen.""")
+    st.write("""Für die Auswertung können Sie mehrere Dateien hochladen und anschließend das Auswertungsjahr auswählen.
+    Auf diese Weise kann die Historie aus den vergangenenen Jahren berücksichtigt werden, z.B. für über den Jahreswechsel
+    gehaltene Positionen.""")
+    try:
+        sof_files = st.file_uploader("Kapitalflussrechnung (CSV-Format)", type="csv", accept_multiple_files=True)
+        sof_dfs = [read_statement_file(io.TextIOWrapper(sof_file, "utf-8"), sof_file.name)
+                   for sof_file in sof_files]
+        if len(sof_dfs) == 0:
+            return
+    except DataError as error:
+        st.error(f"In Datei {error} fehlt die Spalte 'Report Date'; bitte laden Sie den Kontoauszug in englischer Sprache herunter.")
         return
 
     df = pd.concat(sof_dfs).sort_values(["Report Date"])
