@@ -11,6 +11,7 @@ from i18n import format_date, format_currency, get_column_name
 from iterable_text_io import IterableTextIO
 from utils import calc_profits_fifo
 
+RECORD_FUND_TRANSFER = re.compile(r"(Electronic Fund Transfer)|(Disbursement .*)")
 RECORD_INTEREST = re.compile(r"Credit|Debit Interest")
 RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[0-9]{2} [0-9]+(\.[0-9]+)? ([PC])) (\(\w+\))?")
 RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9]+) (.*?)\s*(\(\w+\))?$")
@@ -28,7 +29,7 @@ def categorize_statement_record(record: pd.Series) -> str:
     description = record["Description"]
     if description in ["Opening Balance", "Closing Balance"]:
         return Category.BALANCE.name
-    if description == "Electronic Fund Transfer":
+    if RECORD_FUND_TRANSFER.fullmatch(description):
         return Category.TRANSFER.name
     if "Cash Dividend" in description:
         return Category.DIVIDEND.name
@@ -182,7 +183,7 @@ def display_fund_transfer(df_year: pd.DataFrame):
     deposited_funds = df_transfer["Credit"].sum()
     withdrawn_funds = df_transfer["Debit"].sum()
     st.write(f"Einzahlungen: {format_currency(deposited_funds)}")
-    st.write(f"Auszahlungen: {format_currency(withdrawn_funds)}")
+    st.write(f"Auszahlungen: {format_currency(-withdrawn_funds)}")
     with st.expander("Kapitalflussrechnung (nur Ein- und Auszahlungen)"):
         display_dataframe(df_transfer.filter(["Report Date", "Activity Date", "Description", "Total"]),
                           ["Report Date", "Activity Date"], ["Total"])
