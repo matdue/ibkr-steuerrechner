@@ -1,2 +1,4 @@
-pandas ~= 2.0.0
-streamlit ~= 1.23.1
+Babel ~= 2.13.0
+numpy ~= 1.26.0
+pandas ~= 2.1.0
+streamlit ~= 1.27.0
