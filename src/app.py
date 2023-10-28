@@ -15,6 +15,8 @@ RECORD_FUND_TRANSFER = re.compile(r"(Electronic Fund Transfer)|(Disbursement .*)
 RECORD_INTEREST = re.compile(r"Credit|Debit Interest")
 RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[0-9]{2} [0-9]+(\.[0-9]+)? ([PC])) (\(\w+\))?")
 RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9]+) (.*?)\s*(\(\w+\))?$")
+RECORD_FOREX = re.compile(r"Forex Trade")
+RECORD_MARKET_DATA_SUBSCRIPTION = re.compile(r"[Mm]\*{6}66:")
 
 class Category(Enum):
     BALANCE = auto()
@@ -23,6 +25,8 @@ class Category(Enum):
     INTEREST = auto()
     OPTION = auto()
     SHARES = auto()
+    FOREX = auto()
+    MARKET_DATA_SUBSCRIPTION = auto()
     OTHER = auto()
 
 def categorize_statement_record(record: pd.Series) -> str:
@@ -39,6 +43,10 @@ def categorize_statement_record(record: pd.Series) -> str:
         return Category.OPTION.name
     if RECORD_SHARES.match(description):
         return Category.SHARES.name
+    if RECORD_FOREX.search(description):
+        return Category.FOREX.name
+    if RECORD_MARKET_DATA_SUBSCRIPTION.search(description):
+        return Category.MARKET_DATA_SUBSCRIPTION.name
 
     return Category.OTHER.name
 
@@ -382,6 +390,31 @@ def display_options(df: pd.DataFrame, selected_year: str):
                           ["Report Date", "Activity Date"], ["Total", "Profit"])
 
 
+def display_forex(df_year: pd.DataFrame):
+    st.header("Währungsumrechnungen")
+    st.write("""Fremdwährungskäufe und -verkäufe werden hier nur aufgelistet, aber nicht weiter ausgewertet. Gewinne,
+    die durch Fremdwährungsgeschäfte erwirtschaftet werden, sind steuerlich relevant!""")
+    df_forex = df_year.query(f"Category == '{Category.FOREX.name}'")
+    with st.expander("Kapitalflussrechnung (nur Währungsumrechnungen)"):
+        display_dataframe(df_forex.filter(["Report Date", "Activity Date", "Description", "Total"]),
+                          ["Report Date", "Activity Date"], ["Total"])
+
+
+def display_market_data_subscriptions(df_year: pd.DataFrame):
+    st.header("Marktdatenabonnements")
+    st.write("""Gebühren von Marktdatenabonnements werden aufsummiert. Privatleute können diese Gebühren i.d.R. nicht 
+    absetzen.""")
+    df_mds = df_year.query(f"Category == '{Category.MARKET_DATA_SUBSCRIPTION.name}'")
+    mds_income = df_mds["Credit"].sum()
+    mds_expense = abs(df_mds["Debit"].sum())
+    st.write(f"Einnahmen: {format_currency(mds_income)}")
+    st.write(f"Ausgaben: {format_currency(mds_expense)}")
+    st.write(f"Summe: {format_currency(mds_income - mds_expense)}")
+    with st.expander("Kapitalflussrechnung (nur Marktdatenabonnements)"):
+        display_dataframe(df_mds.filter(["Report Date", "Activity Date", "Description", "Total"]),
+                          ["Report Date", "Activity Date"], ["Total"])
+
+
 def display_other(df_year: pd.DataFrame):
     st.header("Rest")
     st.write("Diese Posten konnten keiner Kategorie zugeordnet werden und wurden daher nicht berücksichtigt.")
@@ -477,6 +510,8 @@ def main():
     display_interests(df_year)
     display_shares(df, selected_year)
     display_options(df, selected_year)
+    display_forex(df_year)
+    display_market_data_subscriptions(df_year)
     display_other(df_year)
 
 

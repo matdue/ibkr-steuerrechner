@@ -7,7 +7,7 @@ Mit diesem Programm kann der Kontoauszug, d.h. die Kapitalflussrechnung, von Int
 - Aktiengeschäfte
 - Optionsgeschäfte (inkl. Aufteilung in die einzelnen Trades)
 - Ein- und Auszahlungen
-- Währungstausch
+- Währungsumrechnungen
 - Marktdatenabonnements
 
 ## Anwendung
