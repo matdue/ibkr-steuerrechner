@@ -434,6 +434,7 @@ def main():
     # Do not use the whole width to display the introduction, use a smaller part to make it better readable
     intro, _ = st.columns([2, 1])
     intro.write("Die Auswertung ersetzt keine Steuerberatung! Alle Angaben sind ohne Gewähr und dienen nur der Inspiration.")
+    intro.write("Dieses Programm ist Open Source, der Programmcode ist auf [GitHub](https://github.com/matdue/ibkr-steuerrechner) zu finden.")
 
     # Statement of Funds (Kapitalflussrechnung)
     intro.caption("Kontoauszug erstellen")
