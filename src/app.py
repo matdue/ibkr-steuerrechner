@@ -397,11 +397,14 @@ def main():
     st.set_page_config("IBKR Steuerrechner", layout="wide")
     st.title("Steuerrechner für Interactive Brokers")
     st.caption("Zur Berechnung der Steuerschuld von Optionen- und Aktiengeschäften")
-    st.write("Die Auswertung ersetzt keine Steuerberatung! Alle Angaben sind ohne Gewähr und dienen nur der Inspiration.")
-    st.write("Alle hochgeladenen Daten werden auf einem Server in den USA verarbeitet. Sie werden nicht gespeichert.")
+
+    # Do not use the whole width to display the introduction, use a smaller part to make it better readable
+    intro, _ = st.columns([2, 1])
+    intro.write("Die Auswertung ersetzt keine Steuerberatung! Alle Angaben sind ohne Gewähr und dienen nur der Inspiration.")
 
     # Statement of Funds (Kapitalflussrechnung)
-    st.write("""Laden Sie zunächst die Kapitalflussrechnung herunter und speichern Sie sie auf ihrem eigenen Rechner ab.
+    intro.caption("Kontoauszug erstellen")
+    intro.write("""Laden Sie zunächst die Kapitalflussrechnung herunter und speichern Sie sie auf ihrem eigenen Rechner ab.
     Diese finden Sie in der Weboberfläche von Interactive Brokers unter dem Menüpunkt *Performance & Berichte / Kontoauszüge*
     bei den *Benutzerdefinierten Kontoauszügen*. 
     Sofern noch nicht geschehen, definieren Sie einen neuen
@@ -413,23 +416,36 @@ def main():
     Jahr oder *Jahresbeginn bis heute* für das aktuelle Jahr. Ein Auszug umfasst maximal ein Jahr. Es ist empfehlenswert,
     den Download im PDF-Format zu wiederholen, er kann als Beleg für das Finanzamt dienen. Sichern Sie beide Dateien,
     dann können sie bei zukünftigen Auswertungen darauf zurückgreifen.""")
-    st.write("""Für die Auswertung können Sie mehrere Dateien hochladen und anschließend das Auswertungsjahr auswählen.
+    intro.write("""Die Kapitalflussrechnung enthält keine personenbezogenen Daten, d.h. keinen Namen, keine Depotnummer
+    usw. Sollten Sie weitere Abschnitte in den Kontoauszug aufnehmen, werden diese bei der Auswertung ignoriert.
+    Dennoch werden diese Daten zum Server übertragen, da sie in der CSV-Datei enthalten sind. Prüfen Sie daher ggf.,
+    ob Sie wirklich nur die Kapitalflussrechnung ausgewählt haben.""")
+
+    # Data upload
+    intro.caption("Kontoauszug zur Auswertung übertragen")
+    intro.write("""Für die Auswertung können Sie mehrere Dateien hochladen und anschließend das Auswertungsjahr auswählen.
     Auf diese Weise kann die Historie aus den vergangenenen Jahren berücksichtigt werden, z.B. für über den Jahreswechsel
     gehaltene Positionen.""")
+    intro.write("""Alle hochgeladenen Daten werden auf einem Server in den USA verarbeitet. Sie werden nur im 
+    Hauptspeicher des Servers abgelegt, sie werden weder dauerhaft noch zeitweise gespeichert. Sobald Sie das 
+    Browserfenster schließen, werden die Daten aus dem Speicher entfernt.""")
     try:
-        sof_files = st.file_uploader("Kapitalflussrechnung (CSV-Format)", type="csv", accept_multiple_files=True)
+        sof_files = intro.file_uploader("Kapitalflussrechnung (CSV-Format)", type="csv", accept_multiple_files=True)
         sof_dfs = [read_statement_file(io.TextIOWrapper(sof_file, "utf-8"), sof_file.name)
                    for sof_file in sof_files]
         if len(sof_dfs) == 0:
             return
     except DataError as error:
-        st.error(f"In Datei {error} fehlt die Spalte 'Report Date'; bitte laden Sie den Kontoauszug in englischer Sprache herunter.")
+        intro.error(f"In Datei {error} fehlt die Spalte 'Report Date'; bitte laden Sie den Kontoauszug in englischer Sprache herunter.")
         return
 
+    intro.caption("Auswertung starten")
+    intro.write("""Wählen Sie nun das Kalenderjahr aus, für das die Kontoauszüge ausgewertet werden sollen. Sie können
+    beliebig oft zwischen den Kalenderjahren wechseln, ohne die Kontoauszügen neu hochladen zu müssen.""")
     df = pd.concat(sof_dfs).sort_values(["Report Date"])
     years = df["Report_Year"].unique()
     years_options = ["Bitte wählen"] + list(years)[::-1]
-    selected_year = st.selectbox("Für welches Kalenderjahr sollen die Steuern berechnet werden?", years_options)
+    selected_year = intro.selectbox("Für welches Kalenderjahr sollen die Steuern berechnet werden?", years_options)
     if selected_year == years_options[0]:
         return
 
@@ -453,7 +469,8 @@ def main():
         | {Category.INTEREST.name} | Zinsen |
         | {Category.DIVIDEND.name} | Dividenden |
         | {Category.SHARES.name} | Aktien |
-        | {Category.OPTION.name} | Optionen |""")
+        | {Category.OPTION.name} | Optionen |
+        | {Category.OTHER.name} | Nicht zuordenbar |""")
 
     display_fund_transfer(df_year)
     display_dividends(df_year, df_year_corrections, selected_year)
