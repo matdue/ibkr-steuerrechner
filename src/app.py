@@ -503,6 +503,8 @@ def main():
         | {Category.DIVIDEND.name} | Dividenden |
         | {Category.SHARES.name} | Aktien |
         | {Category.OPTION.name} | Optionen |
+        | {Category.FOREX.name} | Währungsumrechnungen |
+        | {Category.MARKET_DATA_SUBSCRIPTION.name} | Marktdatenabonnements |
         | {Category.OTHER.name} | Nicht zuordenbar |""")
 
     display_fund_transfer(df_year)
