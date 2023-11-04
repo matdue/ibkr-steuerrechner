@@ -4,14 +4,14 @@ from decimal import Decimal
 import pandas as pd
 from pandas.testing import assert_frame_equal
 
-from utils import calc_share_trade_profits
+from utils import calc_profits_fifo
 
 
 class LongTrades(unittest.TestCase):
     def test_long_close_no_profit(self):
         df = pd.DataFrame([{"count": 100, "credit": None, "debit": -2000},
                            {"count": -100, "credit": 2000, "debit": None}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(0), Decimal(0)],
                                           "start_of_trade": [True, False]},
@@ -20,7 +20,7 @@ class LongTrades(unittest.TestCase):
     def test_long_close_with_profit(self):
         df = pd.DataFrame([{"count": 100, "credit": None, "debit": -2000},
                            {"count": -100, "credit": 3000, "debit": None}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(0), Decimal(1000)],
                                          "start_of_trade": [True, False]},
@@ -29,7 +29,7 @@ class LongTrades(unittest.TestCase):
     def test_long_close_with_losses(self):
         df = pd.DataFrame([{"count": 100, "credit": None, "debit": -2000},
                            {"count": -100, "credit": 1000, "debit": None}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(0), Decimal(-1000)],
                                          "start_of_trade": [True, False]},
@@ -39,7 +39,7 @@ class LongTrades(unittest.TestCase):
         df = pd.DataFrame([{"count": 100, "credit": None, "debit": -2000},
                            {"count": 100, "credit": None, "debit": -3000},
                            {"count": -200, "credit": 5100, "debit": None}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(0), Decimal(0), Decimal(100)],
                                          "start_of_trade": [True, False, False]},
@@ -49,7 +49,7 @@ class LongTrades(unittest.TestCase):
         df = pd.DataFrame([{"count": 200, "credit": None, "debit": -2000},
                            {"count": -100, "credit": 1200, "debit": None},
                            {"count": -100, "credit": 1100, "debit": None}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(0), Decimal(200), Decimal(100)],
                                          "start_of_trade": [True, False, False]},
@@ -60,7 +60,7 @@ class LongTrades(unittest.TestCase):
                            {"count": 100, "credit": None, "debit": -3000},
                            {"count": -100, "credit": 1200, "debit": None},
                            {"count": -100, "credit": 1100, "debit": None}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(0), Decimal(0), Decimal(-800), Decimal(-1900)],
                                          "start_of_trade": [True, False, False, False]},
@@ -71,7 +71,7 @@ class LongTrades(unittest.TestCase):
                            {"count": 200, "credit": None, "debit": -6000},
                            {"count": -200, "credit": 4000, "debit": None},
                            {"count": -100, "credit": 2000, "debit": None}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(0), Decimal(0), Decimal(-1000), Decimal(-1000)],
                                          "start_of_trade": [True, False, False, False]},
@@ -79,7 +79,7 @@ class LongTrades(unittest.TestCase):
 
     def test_one_long(self):
         df = pd.DataFrame([{"count": 100, "credit": None, "debit": -2000}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(0)],
                                          "start_of_trade": [True]},
@@ -90,7 +90,7 @@ class LongTrades(unittest.TestCase):
                            {"count": -100, "credit": 2200, "debit": None},
                            {"count": 100, "credit": None, "debit": -1000},
                            {"count": -100, "credit": 1100, "debit": None}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(0), Decimal(200), Decimal(0), Decimal(100)],
                                          "start_of_trade": [True, False, True, False]},
@@ -100,7 +100,7 @@ class LongTrades(unittest.TestCase):
         df = pd.DataFrame([{"count": 100, "credit": None, "debit": -2000},
                            {"count": -100, "credit": 2200, "debit": None},
                            {"count": 100, "credit": None, "debit": -1000}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(0), Decimal(200), Decimal(0)],
                                          "start_of_trade": [True, False, True]},
@@ -111,7 +111,7 @@ class ShortTrades(unittest.TestCase):
     def test_short_close_no_profit(self):
         df = pd.DataFrame([{"count": -100, "credit": 2000, "debit": None},
                            {"count": 100, "credit": None, "debit": -2000}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(0), Decimal(0)],
                                          "start_of_trade": [True, False]},
@@ -120,7 +120,7 @@ class ShortTrades(unittest.TestCase):
     def test_short_close_with_profit(self):
         df = pd.DataFrame([{"count": -100, "credit": 3000, "debit": None},
                            {"count": 100, "credit": None, "debit": -2000}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(1000), Decimal(0)],
                                          "start_of_trade": [True, False]},
@@ -129,7 +129,7 @@ class ShortTrades(unittest.TestCase):
     def test_short_close_with_losses(self):
         df = pd.DataFrame([{"count": -100, "credit": 1000, "debit": None},
                            {"count": 100, "credit": None, "debit": -2000}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(-1000), Decimal(0)],
                                          "start_of_trade": [True, False]},
@@ -139,7 +139,7 @@ class ShortTrades(unittest.TestCase):
         df = pd.DataFrame([{"count": -200, "credit": 5100, "debit": None},
                            {"count": 100, "credit": None, "debit": -3000},
                            {"count": 100, "credit": None, "debit": -2000}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(100), Decimal(0), Decimal(0)],
                                          "start_of_trade": [True, False, False]},
@@ -149,7 +149,7 @@ class ShortTrades(unittest.TestCase):
         df = pd.DataFrame([{"count": -100, "credit": 1100, "debit": None},
                            {"count": -100, "credit": 1200, "debit": None},
                            {"count": 200, "credit": None, "debit": -2000}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(100), Decimal(200), Decimal(0)],
                                          "start_of_trade": [True, False, False]},
@@ -160,7 +160,7 @@ class ShortTrades(unittest.TestCase):
                            {"count": -100, "credit": 1200, "debit": None},
                            {"count": 100, "credit": None, "debit": -3000},
                            {"count": 100, "credit": None, "debit": -2000}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(-1900), Decimal(-800), Decimal(0), Decimal(0)],
                                          "start_of_trade": [True, False, False, False]},
@@ -171,7 +171,7 @@ class ShortTrades(unittest.TestCase):
                            {"count": -200, "credit": 4000, "debit": None},
                            {"count": 200, "credit": None, "debit": -6000},
                            {"count": 100, "credit": None, "debit": -2000}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(-1000), Decimal(-1000), Decimal(0), Decimal(0)],
                                          "start_of_trade": [True, False, False, False]},
@@ -179,7 +179,7 @@ class ShortTrades(unittest.TestCase):
 
     def test_one_short(self):
         df = pd.DataFrame([{"count": -100, "credit": 2000, "debit": None}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(2000)],
                                          "start_of_trade": [True]},
@@ -190,7 +190,7 @@ class ShortTrades(unittest.TestCase):
                            {"count": 100, "credit": None, "debit": -1000},
                            {"count": -100, "credit": 2200, "debit": None},
                            {"count": 100, "credit": None, "debit": -2000}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(100), Decimal(0), Decimal(200), Decimal(0)],
                                          "start_of_trade": [True, False, True, False]},
@@ -200,7 +200,7 @@ class ShortTrades(unittest.TestCase):
         df = pd.DataFrame([{"count": -100, "credit": 2200, "debit": None},
                            {"count": 100, "credit": None, "debit": -2000},
                            {"count": -100, "credit": 1000, "debit": None}])
-        result = calc_share_trade_profits(df, "count", "debit", "credit")
+        result = calc_profits_fifo(df, "count", "debit", "credit")
         assert_frame_equal(result,
                            pd.DataFrame({"profit": [Decimal(200), Decimal(0), Decimal(1000)],
                                          "start_of_trade": [True, False, True]},
