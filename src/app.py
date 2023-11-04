@@ -437,26 +437,36 @@ def main():
     intro.write("Dieses Programm ist Open Source, der Programmcode ist auf [GitHub](https://github.com/matdue/ibkr-steuerrechner) zu finden.")
 
     # Statement of Funds (Kapitalflussrechnung)
-    intro.caption("Kontoauszug erstellen")
-    intro.write("""Laden Sie zunächst die Kapitalflussrechnung herunter und speichern Sie sie auf ihrem eigenen Rechner ab.
-    Diese finden Sie in der Weboberfläche von Interactive Brokers unter dem Menüpunkt *Performance & Berichte / Kontoauszüge*
-    bei den *Benutzerdefinierten Kontoauszügen*. 
-    Sofern noch nicht geschehen, definieren Sie einen neuen
-    benutzerdefinierten Kontoauszug durch einen Klick auf das Plus-Symbol, vergeben einen Namen (z.B. Kapitalflussrechnung)
-    und wählen als einzigen Abschnitt *Kapitalflussrechnung (Statement of Funds)* aus; alle Abschnittseinstellungen
-    werden auf *Nein* bzw. *Keine* gesetzt. 
-    Zum Generieren des Kontoauszugs klicken Sie auf den Start-Pfeil, wählen den gewünschten Zeitraum, stellen die Sprache
-    auf Englisch um, und klicken auf Download bei CSV-Format. Der Zeitraum ist typischerweise ein komplettes, vergangenes
-    Jahr oder *Jahresbeginn bis heute* für das aktuelle Jahr. Ein Auszug umfasst maximal ein Jahr. Es ist empfehlenswert,
-    den Download im PDF-Format zu wiederholen, er kann als Beleg für das Finanzamt dienen. Sichern Sie beide Dateien,
-    dann können sie bei zukünftigen Auswertungen darauf zurückgreifen.""")
-    intro.write("""Die Kapitalflussrechnung enthält keine personenbezogenen Daten, d.h. keinen Namen, keine Depotnummer
-    usw. Sollten Sie weitere Abschnitte in den Kontoauszug aufnehmen, werden diese bei der Auswertung ignoriert.
-    Dennoch werden diese Daten zum Server übertragen, da sie in der CSV-Datei enthalten sind. Prüfen Sie daher ggf.,
-    ob Sie wirklich nur die Kapitalflussrechnung ausgewählt haben.""")
+    intro.write("#### Kontoauszug erstellen")
+    intro.write("""Laden Sie zunächst in der Weboberfläche von Interactive Brokers einen Kontoauszug, der die 
+    Kapitalflussrechnung enthält, herunter und speichern Sie sie auf ihrem eigenen Rechner ab. Wenn Sie noch keinen so 
+    genannten *Benutzerdefinierten Kontoauszug* erstellt haben, klappen Sie den nachfolgenden Block auf und folgen
+    den Anweisungen.""")
+    with intro.expander("Benutzerdefinierten Kontoauszug erstellen"):
+        st.write("""
+        1. Loggen Sie sich in der Weboberfläche von Interactive Brokers ein
+        1. Wählen Sie den Menüpunkt *Performance & Berichte / Kontoauszüge*
+        1. Klicken Sie auf das Plus-Symbol unten im Abschnitt *Benutzerdefinierte Kontoauszüge*
+        1. Vergeben Sie einen Namen (z.B. Kapitalflussrechnung)
+        1. Wählen Sie als einzigen Abschnitt *Kapitalflussrechnung (Statement of Funds)* aus
+        1. Setzen Sie alle Abschnittseinstellungen auf *Nein* bzw. *Keine*
+        1. Speichern Sie den benutzerdefinierten Kontoauszug durch einen Klick auf *Weiter* und anschließend *Erstellen* ab
+        
+        Anschließend kann der Kontoauszug durch einen Klick auf den Start-Pfeil generiert werden. Wählen Sie den
+        gewünschten Zeitraum, stellen Sie die Sprache auf Englisch um, und klicken Sie auf *Download* bei CSV-Format.
+        
+        Der Zeitraum ist typischerweise ein komplettes, vergangenes Jahr oder *Jahresbeginn bis heute* für das aktuelle 
+        Jahr. Ein Auszug umfasst maximal ein Jahr. Es ist empfehlenswert, den Download im PDF-Format zu wiederholen, er 
+        kann als Beleg für das Finanzamt dienen. Sichern Sie beide Dateien, dann können sie bei zukünftigen Auswertungen 
+        darauf zurückgreifen.
+        
+        Die Kapitalflussrechnung enthält keine personenbezogenen Daten, d.h. keinen Namen, keine Depotnummer
+        usw. Sollten Sie weitere Abschnitte in den Kontoauszug aufnehmen, werden diese bei der Auswertung ignoriert.
+        Dennoch werden diese Daten zum Server übertragen, da sie in der CSV-Datei enthalten sind. Prüfen Sie daher ggf.,
+        ob Sie wirklich nur die Kapitalflussrechnung ausgewählt haben.""")
 
     # Data upload
-    intro.caption("Kontoauszug zur Auswertung übertragen")
+    intro.write("#### Kontoauszug zur Auswertung übertragen")
     intro.write("""Für die Auswertung können Sie mehrere Dateien hochladen und anschließend das Auswertungsjahr auswählen.
     Auf diese Weise kann die Historie aus den vergangenenen Jahren berücksichtigt werden, z.B. für über den Jahreswechsel
     gehaltene Positionen.""")
@@ -473,7 +483,7 @@ def main():
         intro.error(f"In Datei {error} fehlt die Spalte 'Report Date'; bitte laden Sie den Kontoauszug in englischer Sprache herunter.")
         return
 
-    intro.caption("Auswertung starten")
+    intro.write("#### Auswertung starten")
     intro.write("""Wählen Sie nun das Kalenderjahr aus, für das die Kontoauszüge ausgewertet werden sollen. Sie können
     beliebig oft zwischen den Kalenderjahren wechseln, ohne die Kontoauszügen neu hochladen zu müssen.""")
     df = pd.concat(sof_dfs).sort_values(["Report Date"])
