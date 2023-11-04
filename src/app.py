@@ -16,7 +16,7 @@ RECORD_INTEREST = re.compile(r"Credit|Debit Interest")
 RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[0-9]{2} [0-9]+(\.[0-9]+)? ([PC])) (\(\w+\))?")
 RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9]+) (.*?)\s*(\(\w+\))?$")
 RECORD_FOREX = re.compile(r"Forex Trade")
-RECORD_MARKET_DATA_SUBSCRIPTION = re.compile(r"[Mm]\*{6}66:")
+RECORD_MARKET_DATA_SUBSCRIPTION = re.compile(r"[A-Za-z]\*{6}[0-9]{2}:")
 
 class Category(Enum):
     BALANCE = auto()
