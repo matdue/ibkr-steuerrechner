@@ -12,6 +12,7 @@ from iterable_text_io import IterableTextIO
 from utils import calc_profits_fifo
 
 RECORD_FUND_TRANSFER = re.compile(r"(Electronic Fund Transfer)|(Disbursement .*)")
+RECORD_DIVIDEND = re.compile(r"Cash Dividend|Payment in Lieu of Dividend")
 RECORD_INTEREST = re.compile(r"Credit|Debit Interest")
 RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[0-9]{2} [0-9]+(\.[0-9]+)? ([PC])) (\(\w+\))?")
 RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9]+) (.*?)\s*(\(\w+\))?$")
@@ -35,7 +36,7 @@ def categorize_statement_record(record: pd.Series) -> str:
         return Category.BALANCE.name
     if RECORD_FUND_TRANSFER.fullmatch(description):
         return Category.TRANSFER.name
-    if "Cash Dividend" in description:
+    if RECORD_DIVIDEND.search(description):
         return Category.DIVIDEND.name
     if RECORD_INTEREST.search(description):
         return Category.INTEREST.name
