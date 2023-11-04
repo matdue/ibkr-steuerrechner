@@ -19,6 +19,7 @@ RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9]+) (.*?)\s*(\(\w+\))?$")
 RECORD_FOREX = re.compile(r"Forex Trade")
 RECORD_MARKET_DATA_SUBSCRIPTION = re.compile(r"[A-Za-z]\*{6}[0-9]{2}:")
 
+
 class Category(Enum):
     BALANCE = auto()
     TRANSFER = auto()
@@ -29,6 +30,7 @@ class Category(Enum):
     FOREX = auto()
     MARKET_DATA_SUBSCRIPTION = auto()
     OTHER = auto()
+
 
 def categorize_statement_record(record: pd.Series) -> str:
     description = record["Description"]
@@ -77,9 +79,10 @@ class DividendType(Enum):
     TAX = auto()
     OTHER = auto()
 
+
 def parse_dividend_record(record: pd.Series) -> str:
     description = record["Description"]
-    if type(description) != str:
+    if type(description) is not str:
         return DividendType.OTHER.name
     if description.endswith(" (Ordinary Dividend)"):
         return DividendType.ORDINARY.name
@@ -122,7 +125,7 @@ def read_statement_file(file: io.TextIOBase, filename: str) -> pd.DataFrame:
         with IterableTextIO(statement_of_funds_lines) as s:
             # noinspection PyTypeChecker
             df = pd.read_csv(s,
-                             usecols=["Currency", "Report Date" ,"Activity Date", "Description", "Debit", "Credit"],
+                             usecols=["Currency", "Report Date", "Activity Date", "Description", "Debit", "Credit"],
                              parse_dates=["Report Date", "Activity Date"],
                              converters={"Debit": decimal_from_value, "Credit": decimal_from_value})
         df["Total"] = df[["Debit", "Credit"]].sum(axis=1)
@@ -135,7 +138,6 @@ def read_statement_file(file: io.TextIOBase, filename: str) -> pd.DataFrame:
         return df
     except Exception:
         raise DataError(filename)
-
 
 
 def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns: list[str]):
@@ -162,7 +164,8 @@ def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns:
                       if col not in date_columns and col not in number_columns}
 
     if "Trade" in df.columns:
-        # Transform column Trade into a sequence, so we can switch the background whenever a different trade is displayed
+        # Transform column Trade into a sequence, so we can switch the background whenever a different trade is
+        # displayed.
         # Example:
         # Trade  Action
         # 0      Buy
@@ -175,7 +178,8 @@ def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns:
         # 0              Sell
         # 1              Buy
         # 2              Buy
-        # This way we are able to use an alternating background for each different trade by calculating TradeSequence % 2
+        # This way we are able to use an alternating background for each different trade by calculating
+        # TradeSequence % 2
         df["TradeSequence"] = df.groupby("Trade", as_index=False, group_keys=True, sort=False).ngroup()
         column_config["TradeSequence"] = None
         st.dataframe(df.style.apply(alternate_background, axis=1).format(formats),
@@ -187,7 +191,8 @@ def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns:
 
 def display_fund_transfer(df_year: pd.DataFrame):
     st.header("Ein- und Auszahlungen")
-    st.write("Alle Ein- und Auszahlen werden aufsummiert. Beide Summen dienen nur der Information und sind steuerlich nicht relevant.")
+    st.write("""Alle Ein- und Auszahlen werden aufsummiert. Beide Summen dienen nur der Information und sind steuerlich
+    nicht relevant.""")
     df_transfer = df_year.query(f"Category == '{Category.TRANSFER.name}'")
     deposited_funds = df_transfer["Credit"].sum()
     withdrawn_funds = df_transfer["Debit"].sum()
@@ -277,7 +282,8 @@ def display_shares(df: pd.DataFrame, selected_year: str):
                  .filter(["Report Date", "Activity Date", "Description", "Debit", "Credit", "Total", "Report_Year",
                           "Activity_Year"]))
     if not df_shares.empty:
-        df_shares[["Action", "Count", "Name"]] = df_shares.apply(parse_option_share_record, axis=1, result_type="expand")
+        df_shares[["Action", "Count", "Name"]] = df_shares.apply(parse_option_share_record, axis=1,
+                                                                 result_type="expand")
         df_shares_by_name = df_shares.groupby("Name", as_index=False, group_keys=True, sort=False)
         df_shares = df_shares_by_name.apply(_add_profits, {"trade": 0})
         df_shares_selected_year = df_shares.query("Activity_Year == @selected_year")
@@ -291,9 +297,10 @@ def display_shares(df: pd.DataFrame, selected_year: str):
         df_shares_selected_year = pd.DataFrame(columns=["Profit", "Trade"])
 
     st.header("Aktien")
-    st.write("""Gewinne und Verluste aus Aktienkäufe, -verkäufe, -andienungen und -ausbuchungen werden nach der FIFO-Methode berechnet und hier ausgewiesen.
-    Käufe und Andienungen werden steuerlich erst dann relevant, wenn die Position durch Verkauf oder Ausbuchung geschlossen wird.
-    Erfolgt die Schließung erst im Folgejahr, wird erst dann ein Gewinn oder Verlust berechnet.""")
+    st.write("""Gewinne und Verluste aus Aktienkäufe, -verkäufe, -andienungen und -ausbuchungen werden nach der
+    FIFO-Methode berechnet und hier ausgewiesen. Käufe und Andienungen werden steuerlich erst dann relevant, wenn die
+    Position durch Verkauf oder Ausbuchung geschlossen wird. Erfolgt die Schließung erst im Folgejahr, wird erst dann
+    ein Gewinn oder Verlust berechnet.""")
     st.write(f"Gewinne: {format_currency(shares_profits)}")
     st.write(f"Verluste: {format_currency(shares_losses)}")
     st.write(f"Summe: {format_currency(shares_total)}")
@@ -301,13 +308,15 @@ def display_shares(df: pd.DataFrame, selected_year: str):
     with st.expander(f"Kapitalflussrechnung (nur in {selected_year} abgeschlossene Aktiengeschäfte)"):
         closed_trades = df_shares_selected_year.query("Profit != 0").get("Trade").unique()
         display_dataframe(df_shares_selected_year.query("Trade in @closed_trades")
-                          .reindex(columns=["Trade", "Report Date", "Activity Date", "Description", "Count", "Name", "Total", "Profit"])
+                          .reindex(columns=["Trade", "Report Date", "Activity Date", "Description", "Count", "Name",
+                                            "Total", "Profit"])
                           .sort_values(["Trade", "Report Date"]),
                           ["Report Date", "Activity Date"], ["Total", "Profit"])
 
     with st.expander("Kapitalflussrechnung (nur Aktiengeschäfte)"):
         display_dataframe(df_shares
-                          .reindex(columns=["Trade", "Report Date", "Activity Date", "Description", "Count", "Name", "Total", "Profit"])
+                          .reindex(columns=["Trade", "Report Date", "Activity Date", "Description", "Count", "Name",
+                                            "Total", "Profit"])
                           .sort_values(["Trade", "Report Date"]),
                           ["Report Date", "Activity Date"], ["Total", "Profit"])
 
@@ -317,11 +326,12 @@ def display_options(df: pd.DataFrame, selected_year: str):
                   .filter(["Report Date", "Activity Date", "Description", "Debit", "Credit", "Total", "Report_Year",
                            "Activity_Year"]))
     if not df_options.empty:
-        df_options[["Action", "Count", "Name"]] = df_options.apply(parse_option_share_record, axis=1, result_type="expand")
+        df_options[["Action", "Count", "Name"]] = df_options.apply(parse_option_share_record, axis=1,
+                                                                   result_type="expand")
         df_options_by_name = df_options.groupby("Name", as_index=False, group_keys=True, sort=False)
         df_options = df_options_by_name.apply(_add_profits, {"trade": 0})
-        df_options_by_trade = (df_options.filter(["Trade", "Name", "Debit", "Credit", "Count", "Profit", "Activity_Year",
-                                                  "Action"])
+        df_options_by_trade = (df_options.filter(["Trade", "Name", "Debit", "Credit", "Count", "Profit",
+                                                  "Activity_Year", "Action"])
                                .groupby("Trade", sort=False)
                                .agg(Credit=("Credit", "sum"),
                                     Debit=("Debit", "sum"),
@@ -359,8 +369,8 @@ def display_options(df: pd.DataFrame, selected_year: str):
     st.write("""Gewinne und Verluste aus Optionsgeschäften werden nach der FIFO-Methode berechnet und hier ausgewiesen.
     Stillhaltergeschäfte sind sofort steuerlich relevant, Termingeschäfte erst mit Schließung der Position.
     Der Sonderfall Barausgleich wird nicht berücksichtigt.""")
-    st.write("""Verluste aus Termingeschäfte können bei Privatpersonen nur beschränkt mit Gewinnen aus Stillhaltergeschäften ausgeglichen werden.
-    Alles über 20.000 € wird in den Verlusttopf gelegt.""")
+    st.write("""Verluste aus Termingeschäfte können bei Privatpersonen nur beschränkt mit Gewinnen aus
+    Stillhaltergeschäften ausgeglichen werden. Alles über 20.000 € wird in den Verlusttopf gelegt.""")
     st.subheader("Stillhaltergeschäfte")
     st.write(f"Einkünfte: {format_currency(stillhalter_einkuenfte)}")
     st.write(f"Glattstellungen: {format_currency(stillhalter_glattstellungen)}")
@@ -434,8 +444,10 @@ def main():
 
     # Do not use the whole width to display the introduction, use a smaller part to make it better readable
     intro, _ = st.columns([2, 1])
-    intro.write("Die Auswertung ersetzt keine Steuerberatung! Alle Angaben sind ohne Gewähr und dienen nur der Inspiration.")
-    intro.write("Dieses Programm ist Open Source, der Programmcode ist auf [GitHub](https://github.com/matdue/ibkr-steuerrechner) zu finden.")
+    intro.write("""Die Auswertung ersetzt keine Steuerberatung! Alle Angaben sind ohne Gewähr und dienen nur der 
+    Inspiration.""")
+    intro.write("""Dieses Programm ist Open Source, der Programmcode ist auf 
+    [GitHub](https://github.com/matdue/ibkr-steuerrechner) zu finden.""")
 
     # Statement of Funds (Kapitalflussrechnung)
     intro.write("#### Kontoauszug erstellen")
@@ -451,7 +463,8 @@ def main():
         1. Vergeben Sie einen Namen (z.B. Kapitalflussrechnung)
         1. Wählen Sie als einzigen Abschnitt *Kapitalflussrechnung (Statement of Funds)* aus
         1. Setzen Sie alle Abschnittseinstellungen auf *Nein* bzw. *Keine*
-        1. Speichern Sie den benutzerdefinierten Kontoauszug durch einen Klick auf *Weiter* und anschließend *Erstellen* ab
+        1. Speichern Sie den benutzerdefinierten Kontoauszug durch einen Klick auf *Weiter* und anschließend *Erstellen*
+           ab
         
         Anschließend kann der Kontoauszug durch einen Klick auf den Start-Pfeil generiert werden. Wählen Sie den
         gewünschten Zeitraum, stellen Sie die Sprache auf Englisch um, und klicken Sie auf *Download* bei CSV-Format.
@@ -468,9 +481,9 @@ def main():
 
     # Data upload
     intro.write("#### Kontoauszug zur Auswertung übertragen")
-    intro.write("""Für die Auswertung können Sie mehrere Dateien hochladen und anschließend das Auswertungsjahr auswählen.
-    Auf diese Weise kann die Historie aus den vergangenenen Jahren berücksichtigt werden, z.B. für über den Jahreswechsel
-    gehaltene Positionen.""")
+    intro.write("""Für die Auswertung können Sie mehrere Dateien hochladen und anschließend das Auswertungsjahr 
+    auswählen. Auf diese Weise kann die Historie aus den vergangenenen Jahren berücksichtigt werden, z.B. für über den
+    Jahreswechsel gehaltene Positionen.""")
     intro.write("""Alle hochgeladenen Daten werden auf einem Server in den USA verarbeitet. Sie werden nur im 
     Hauptspeicher des Servers abgelegt, sie werden weder dauerhaft noch zeitweise gespeichert. Sobald Sie das 
     Browserfenster schließen, werden die Daten aus dem Speicher entfernt.""")
@@ -481,7 +494,8 @@ def main():
         if len(sof_dfs) == 0:
             return
     except DataError as error:
-        intro.error(f"In Datei {error} fehlt die Spalte 'Report Date'; bitte laden Sie den Kontoauszug in englischer Sprache herunter.")
+        intro.error(f"""In Datei {error} fehlt die Spalte 'Report Date'; bitte laden Sie den Kontoauszug in englischer
+        Sprache herunter.""")
         return
 
     intro.write("#### Auswertung starten")
