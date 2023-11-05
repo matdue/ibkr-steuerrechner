@@ -501,7 +501,11 @@ def main():
     intro.write("#### Auswertung starten")
     intro.write("""Wählen Sie nun das Kalenderjahr aus, für das die Kontoauszüge ausgewertet werden sollen. Sie können
     beliebig oft zwischen den Kalenderjahren wechseln, ohne die Kontoauszügen neu hochladen zu müssen.""")
-    df = pd.concat(sof_dfs).sort_values(["Report Date"])
+    # Skip empty reports
+    sof_dfs = [sof_df for sof_df in sof_dfs if not sof_df.empty]
+    # Ensure chronological order of reports and keep order within each report as is
+    sof_dfs.sort(key=lambda sof_df: sof_df["Report Date"].iloc[0])
+    df = pd.concat(sof_dfs, ignore_index=True)
     years = df["Report_Year"].unique()
     years_options = ["Bitte wählen"] + list(years)[::-1]
     selected_year = intro.selectbox("Für welches Kalenderjahr sollen die Steuern berechnet werden?", years_options)
