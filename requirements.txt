@@ -1,4 +1,4 @@
-Babel ~= 2.13.0
+Babel ~= 2.15.0
 numpy ~= 1.26.0
-pandas ~= 2.1.0
-streamlit ~= 1.28.0
+pandas ~= 2.2.0
+streamlit ~= 1.35.0

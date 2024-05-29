@@ -285,7 +285,7 @@ def display_shares(df: pd.DataFrame, selected_year: str):
         df_shares[["Action", "Count", "Name"]] = df_shares.apply(parse_option_share_record, axis=1,
                                                                  result_type="expand")
         df_shares_by_name = df_shares.groupby("Name", as_index=False, group_keys=True, sort=False)
-        df_shares = df_shares_by_name.apply(_add_profits, {"trade": 0})
+        df_shares = df_shares_by_name.apply(_add_profits, {"trade": 0}, include_groups=True)
         df_shares_selected_year = df_shares.query("Activity_Year == @selected_year")
         shares_profits = df_shares_selected_year.query("Profit > 0").get("Profit").sum()
         shares_losses = abs(df_shares_selected_year.query("Profit < 0").get("Profit")).sum()
@@ -329,7 +329,7 @@ def display_options(df: pd.DataFrame, selected_year: str):
         df_options[["Action", "Count", "Name"]] = df_options.apply(parse_option_share_record, axis=1,
                                                                    result_type="expand")
         df_options_by_name = df_options.groupby("Name", as_index=False, group_keys=True, sort=False)
-        df_options = df_options_by_name.apply(_add_profits, {"trade": 0})
+        df_options = df_options_by_name.apply(_add_profits, {"trade": 0}, include_groups=True)
         df_options_by_trade = (df_options.filter(["Trade", "Name", "Debit", "Credit", "Count", "Profit",
                                                   "Activity_Year", "Action"])
                                .groupby("Trade", sort=False)
