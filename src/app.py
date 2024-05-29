@@ -14,8 +14,8 @@ from utils import calc_profits_fifo
 RECORD_FUND_TRANSFER = re.compile(r"(Electronic Fund Transfer)|(Disbursement .*)")
 RECORD_DIVIDEND = re.compile(r"Cash Dividend|Payment in Lieu of Dividend")
 RECORD_INTEREST = re.compile(r"Credit|Debit Interest")
-RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[0-9]{2} [0-9]+(\.[0-9]+)? ([PC])) (\(\w+\))?")
-RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9]+) (.*?)\s*(\(\w+\))?$")
+RECORD_OPTION = re.compile(r"(Buy|Sell) (-?[0-9,]+) (.{1,5} [0-9]{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[0-9]{2} [0-9]+(\.[0-9]+)? ([PC])) (\(\w+\))?")
+RECORD_SHARES = re.compile(r"(Buy|Sell) (-?[0-9,]+) (.*?)\s*(\(\w+\))?$")
 RECORD_FOREX = re.compile(r"Forex Trade")
 RECORD_MARKET_DATA_SUBSCRIPTION = re.compile(r"[A-Za-z]\*{6}[0-9]{2}:")
 
@@ -67,11 +67,11 @@ def parse_option_share_record(record: pd.Series) -> dict:
     if match is not None:
         # Cleansing: Remove ending .0 from strike price as some options have this precision specification and some not
         name = re.sub(r"(.*?)(\.0)( [CP])", r"\1\3", match.group(3))
-        return asdict(FinancialAction(match.group(1), int(match.group(2)), name))
+        return asdict(FinancialAction(match.group(1), int(match.group(2).replace(",", "")), name))
 
     match = RECORD_SHARES.match(description)
     if match is not None:
-        return asdict(FinancialAction(match.group(1), int(match.group(2)), match.group(3)))
+        return asdict(FinancialAction(match.group(1), int(match.group(2).replace(",", "")), match.group(3)))
 
 
 class DividendType(Enum):
