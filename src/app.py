@@ -57,7 +57,7 @@ def categorize_statement_record(record: pd.Series) -> str:
 @dataclass
 class FinancialAction:
     action: str
-    count: float
+    count: Decimal
     name: str
 
 
@@ -67,11 +67,11 @@ def parse_option_share_record(record: pd.Series) -> dict:
     if match is not None:
         # Cleansing: Remove ending .0 from strike price as some options have this precision specification and some not
         name = re.sub(r"(.*?)(\.0)( [CP])", r"\1\3", match.group(3))
-        return asdict(FinancialAction(match.group(1), float(match.group(2).replace(",", "")), name))
+        return asdict(FinancialAction(match.group(1), Decimal(match.group(2).replace(",", "")), name))
 
     match = RECORD_SHARES.match(description)
     if match is not None:
-        return asdict(FinancialAction(match.group(1), float(match.group(2).replace(",", "")), match.group(3)))
+        return asdict(FinancialAction(match.group(1), Decimal(match.group(2).replace(",", "")), match.group(3)))
 
 
 class DividendType(Enum):
