@@ -2,13 +2,13 @@
 Zur Berechnung der Steuerschuld von Optionen- und Aktiengeschäften
 
 Mit diesem Programm kann der Kontoauszug, d.h. die Kapitalflussrechnung, von Interactive Brokers ausgewertet werden. Die folgenden Einträge werden erkannt und aufsummiert oder detaillierter analysiert:
-- Dividenden
-- Zinsen
-- Aktiengeschäfte
-- Optionsgeschäfte (inkl. Aufteilung in die einzelnen Trades)
 - Ein- und Auszahlungen
-- Währungsumrechnungen
-- Marktdatenabonnements
+- Aktien-Trades (nur long)
+- Anleihen-Trades (nur T-Bills)
+- Dividenausschüttungen
+- Zinseinnahmen und -ausgaben
+- Optionen (Stillhalter- und Termingeschäfte)
+- Fremdwährungsgeschäfte
 
 ## Anwendung
 

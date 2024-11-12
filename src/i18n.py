@@ -5,36 +5,34 @@ import babel.dates
 import babel.numbers
 import pandas as pd
 
-
-COLUMN_NAMES = {
-    "Report Date": "Berichtsdatum",
-    "Activity Date": "Datum der Aktivität",
-    "Description": "Beschreibung",
-    "Debit": "Soll",
-    "Credit": "Haben",
-    "Total": "Betrag",
-    "Category": "Kategorie",
-    "Count": "Anzahl",
-    "Name": "Aktie/Option",
-    "Profit": "Gewinn/Verlust",
-    "Trade": "Trade-Nr.",
-    "Action": "Aktion"
+COLUMN_NAME = {
+    "date": "Datum",
+    "report_date": "Datum (Kontoauszug)",
+    "amount": "Betrag",
+    "tax": "Steuern",
+    "activity": "Aktivität",
+    "no": "Lfd. Nr.",
+    "symbol": "Symbol",
+    "description": "Beschreibung",
+    "expiry": "Fällig am",
+    "closed": "Geschlossen",
+    "profit": "Gewinn/Verlust",
+    "trade_id": "Trade-ID",
+    "activity_code": "Code",
+    "quantity": "Anzahl",
+    "correction": "Korrektur"
 }
 
 current_locale = babel.Locale("de_DE")
 
 
-def format_currency(x) -> Optional[str]:
+def format_currency(x, currency: str = "EUR") -> Optional[str]:
     if pd.isnull(x):
         return None
-    return babel.numbers.format_currency(x, "EUR", locale=current_locale)
+    return babel.numbers.format_currency(x, currency, locale=current_locale)
 
 
 def format_date(x) -> Optional[str]:
     if pd.isnull(x):
         return None
     return babel.dates.format_date(x, locale=current_locale)
-
-
-def get_column_name(column: str) -> str:
-    return COLUMN_NAMES[column]
