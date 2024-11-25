@@ -11,8 +11,6 @@ def display_termingeschaefte(df: pd.DataFrame):
     st.write("""Gewinne und Verluste aus Termingeschäften werden nach der FIFO-Methode berechnet und hier ausgewiesen.
         Termingeschäfte werden erst mit Schließung der Position steuerlich relevant.
         Der Sonderfall Barausgleich wird nicht berücksichtigt.""")
-    st.write("""Verluste aus Termingeschäfte können bei Privatpersonen nur beschränkt mit Gewinnen aus
-        Stillhaltergeschäften ausgeglichen werden. Alles über 20.000 € wird ins Folgejahr vorgetragen.""")
     profitable_trades = df.query("profit >= 0")["profit"].sum()
     lossy_trades = df.query("profit < 0")["profit"].sum()
     sum_trades = profitable_trades + lossy_trades
