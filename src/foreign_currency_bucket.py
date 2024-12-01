@@ -10,7 +10,7 @@ from typing import Self, Deque
 
 from dateutil import relativedelta
 
-from ibkr_steuerrechner.money import Money
+from money import Money
 
 
 class TaxRelevance(Enum):

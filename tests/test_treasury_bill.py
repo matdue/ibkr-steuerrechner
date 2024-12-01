@@ -2,10 +2,10 @@ import unittest
 from datetime import date
 from decimal import Decimal
 
-from ibkr_steuerrechner.flex_query import read_report
-from ibkr_steuerrechner.money import Money
-from ibkr_steuerrechner.report import Report
-from ibkr_steuerrechner.treasury_bill import TreasuryBillTrade, TreasuryBillTransaction
+from flex_query import read_report
+from money import Money
+from report import Report
+from treasury_bill import TreasuryBillTrade, TreasuryBillTransaction
 
 
 class TreasuryBillTests(unittest.TestCase):

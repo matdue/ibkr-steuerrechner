@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from ibkr_steuerrechner.page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
+from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
 
 
 def display_forexes(df: pd.DataFrame):

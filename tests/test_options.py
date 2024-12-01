@@ -2,10 +2,10 @@ import unittest
 from datetime import date
 from decimal import Decimal
 
-from ibkr_steuerrechner.flex_query import read_report
-from ibkr_steuerrechner.money import Money
-from ibkr_steuerrechner.options import OptionTrade, OptionTransaction
-from ibkr_steuerrechner.report import Report
+from flex_query import read_report
+from money import Money
+from options import OptionTrade, OptionTransaction
+from report import Report
 
 
 class OptionsTests(unittest.TestCase):

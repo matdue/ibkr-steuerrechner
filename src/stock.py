@@ -8,7 +8,7 @@ from enum import Enum, auto
 from functools import reduce
 from typing import Self, Deque
 
-from ibkr_steuerrechner.money import Money
+from money import Money
 
 
 class StockType(Enum):

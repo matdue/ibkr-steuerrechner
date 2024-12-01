@@ -8,7 +8,7 @@
             "module": "streamlit",
             "args": [
                 "run",
-                "src/ibkr_steuerrechner/app.py"
+                "src/app.py"
             ]
         }
     ]

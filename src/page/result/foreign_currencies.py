@@ -1,8 +1,8 @@
 import pandas as pd
 import streamlit as st
 
-from ibkr_steuerrechner.i18n import format_currency
-from ibkr_steuerrechner.page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
+from i18n import format_currency
+from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
 
 
 def display_foreign_currencies(buckets: dict[str, pd.DataFrame]):

@@ -4,8 +4,8 @@ from decimal import Decimal
 
 import pandas as pd
 
-from ibkr_steuerrechner.foreign_currency_bucket import ForeignCurrencyFlow, TaxRelevance, AccrualFlow, ReturnFlow, ForeignCurrencyBucket
-from ibkr_steuerrechner.money import Money
+from foreign_currency_bucket import ForeignCurrencyFlow, TaxRelevance, AccrualFlow, ReturnFlow, ForeignCurrencyBucket
+from money import Money
 
 today = datetime.date(2024, 12,31)
 today_11_years_ago = datetime.date(2013, 12,31)

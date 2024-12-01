@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from datetime import date
 
-from ibkr_steuerrechner.money import Money
+from money import Money
 
 
 @dataclass
-class Interest:
+class Forex:
+    tradeId: str
     date: date
-    amount: Money
     activity: str
+    amount: Money
+    amount_orig: Money

@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from ibkr_steuerrechner.i18n import format_date, format_currency, COLUMN_NAME
+from i18n import format_date, format_currency, COLUMN_NAME
 
 
 def ensure_report_is_available():

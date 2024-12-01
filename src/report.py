@@ -5,18 +5,18 @@ from typing import Iterable, Tuple
 
 import pandas as pd
 
-from ibkr_steuerrechner.deposit import Deposit
-from ibkr_steuerrechner.dividend import Dividend
-from ibkr_steuerrechner.foreign_currency_bucket import ForeignCurrencyBucket, ForeignCurrencyFlow, TaxRelevance
-from ibkr_steuerrechner.forex import Forex
-from ibkr_steuerrechner.interest import Interest
-from ibkr_steuerrechner.money import Money
-from ibkr_steuerrechner.options import OptionTransaction, OptionTrade, OptionType
-from ibkr_steuerrechner.other_fee import OtherFee
-from ibkr_steuerrechner.stock import StockTrade, StockTransaction, StockType, ReturnTransaction
-from ibkr_steuerrechner.treasury_bill import TreasuryBillTrade, TreasuryBillTransaction
-from ibkr_steuerrechner.unknown_line import UnknownLine
-from ibkr_steuerrechner.utils import lookahead
+from deposit import Deposit
+from dividend import Dividend
+from foreign_currency_bucket import ForeignCurrencyBucket, ForeignCurrencyFlow, TaxRelevance
+from forex import Forex
+from interest import Interest
+from money import Money
+from options import OptionTransaction, OptionTrade, OptionType
+from other_fee import OtherFee
+from stock import StockTrade, StockTransaction, StockType, ReturnTransaction
+from treasury_bill import TreasuryBillTrade, TreasuryBillTransaction
+from unknown_line import UnknownLine
+from utils import lookahead
 
 
 class Report:

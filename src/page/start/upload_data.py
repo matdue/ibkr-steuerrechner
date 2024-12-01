@@ -4,8 +4,8 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
-from ibkr_steuerrechner.flex_query import read_report, DataError, REQUIRED_COLUMNS
-from ibkr_steuerrechner.report import Report
+from flex_query import read_report, DataError, REQUIRED_COLUMNS
+from report import Report
 
 
 def create_report(data_files: list):
