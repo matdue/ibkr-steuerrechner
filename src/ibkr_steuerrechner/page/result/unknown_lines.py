@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
+from ibkr_steuerrechner.page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
 
 
 def display_unknown_lines(df: pd.DataFrame):

@@ -1,8 +1,8 @@
 import pandas as pd
 import streamlit as st
 
-from i18n import format_currency
-from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
+from ibkr_steuerrechner.i18n import format_currency
+from ibkr_steuerrechner.page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
 
 
 def display_bonds(df: pd.DataFrame, df_all: pd.DataFrame):

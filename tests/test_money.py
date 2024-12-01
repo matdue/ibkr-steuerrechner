@@ -1,7 +1,7 @@
 import unittest
 from decimal import Decimal
 
-from money import Money, CurrencyMismatchError
+from ibkr_steuerrechner.money import Money, CurrencyMismatchError
 
 
 class MoneyTests(unittest.TestCase):

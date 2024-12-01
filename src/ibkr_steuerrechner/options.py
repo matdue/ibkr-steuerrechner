@@ -6,7 +6,7 @@ from decimal import Decimal
 from enum import Enum, auto
 from functools import reduce
 
-from money import Money
+from ibkr_steuerrechner.money import Money
 
 
 class OptionType(Enum):

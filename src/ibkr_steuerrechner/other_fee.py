@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from datetime import date
 
-from money import Money
+from ibkr_steuerrechner.money import Money
 
 
 @dataclass
-class UnknownLine:
+class OtherFee:
     date: date
     amount: Money
     activity: str

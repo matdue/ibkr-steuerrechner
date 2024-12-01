@@ -3,7 +3,7 @@ import tomllib
 
 import streamlit as st
 
-from page.utils import ensure_report_is_available
+from ibkr_steuerrechner.page.utils import ensure_report_is_available
 
 
 report = ensure_report_is_available()

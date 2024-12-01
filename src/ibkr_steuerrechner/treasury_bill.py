@@ -7,7 +7,7 @@ from decimal import Decimal
 from functools import reduce
 from typing import Self, Deque
 
-from money import Money
+from ibkr_steuerrechner.money import Money
 
 
 @dataclass

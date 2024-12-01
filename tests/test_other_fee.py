@@ -2,10 +2,10 @@ import unittest
 from datetime import date
 from decimal import Decimal
 
-from flex_query import read_report
-from money import Money
-from other_fee import OtherFee
-from report import Report
+from ibkr_steuerrechner.flex_query import read_report
+from ibkr_steuerrechner.money import Money
+from ibkr_steuerrechner.other_fee import OtherFee
+from ibkr_steuerrechner.report import Report
 
 
 class OtherFeeTests(unittest.TestCase):
