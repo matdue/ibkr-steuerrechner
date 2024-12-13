@@ -228,7 +228,7 @@ class Report:
                                   for x in self._interests
                                   if x.date.year == year_int))
 
-    def get_options(self, year: str, option_type: OptionType, cut_off_dates: dict[int, date]):
+    def get_options(self, year: str, option_type: OptionType):
         year_int = int(year)
 
         def option_line(trades: Iterable[Tuple[OptionTrade, OptionTrade.Profit]]):
@@ -265,7 +265,7 @@ class Report:
         trades_with_profit = ((trade, profit_of_year)
                               for trade in self._option_trades
                               if trade.option_type() == option_type
-                              for profit_of_year in [trade.calculate_profit_per_year(cut_off_dates).get(year_int)]
+                              for profit_of_year in [trade.calculate_profit_per_year().get(year_int)]
                               if profit_of_year is not None)
         return pd.DataFrame(columns=["sequence", "no", "date", "description", "expiry", "closed",
                                      "activity", "trade_id", "quantity", "amount", "profit"],

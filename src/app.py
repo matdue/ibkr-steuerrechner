@@ -11,7 +11,6 @@ def main():
                 st.Page("page/start/introduction.py", title="Einführung"),
                 st.Page("page/start/create_statement.py", title="Kontoauszüge erstellen"),
                 st.Page("page/start/upload_data.py", title="Daten hochladen"),
-                st.Page("page/start/tax_report_dates.py", title="Abgabezeitpunkte"),
                 st.Page("page/start/report.py", title="Auswertung")
             ],
             "Ergebnis": [

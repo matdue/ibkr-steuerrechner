@@ -34,6 +34,6 @@ else:
         del st.session_state["selected_year"]
 
 left, right = st.columns([2, 1])
-left.page_link("page/start/tax_report_dates.py", label="Zurück", icon=":material/arrow_back:")
+left.page_link("page/start/upload_data.py", label="Zurück", icon=":material/arrow_back:")
 if selected_year != years_options[0]:
     right.page_link("page/result/deposits.py", label="Weiter", icon=":material/arrow_forward:")

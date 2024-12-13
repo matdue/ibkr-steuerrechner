@@ -300,7 +300,7 @@ class OptionsTests(unittest.TestCase):
             ]
         )
 
-        profit = trade.calculate_profit_per_year({})
+        profit = trade.calculate_profit_per_year()
 
         self.assertTrue(2022 in profit.keys())
         self.assertEqual(Money(Decimal(50), "EUR"), profit[2022].total)
@@ -332,7 +332,7 @@ class OptionsTests(unittest.TestCase):
             ]
         )
 
-        profit = trade.calculate_profit_per_year({})
+        profit = trade.calculate_profit_per_year()
 
         self.assertTrue(2022 in profit.keys())
         self.assertEqual(Money(Decimal("44.50"), "EUR"), profit[2022].total)
@@ -364,73 +364,7 @@ class OptionsTests(unittest.TestCase):
             ]
         )
 
-        profit = trade.calculate_profit_per_year({})
-
-        self.assertEqual([2022, 2023], list(profit.keys()))
-        self.assertEqual(Money(Decimal("50"), "EUR"), profit[2022].total)
-        self.assertEqual(Money(Decimal("-5.50"), "EUR"), profit[2023].total)
-
-    def test_profit_stillhalter_one_open_one_close_different_year_before_cut_off(self):
-        trade = OptionTrade(
-            "XXX",
-            "Description",
-            date.fromisoformat("20220414"),
-            [
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20220301"),
-                    "Sell 1 XXX 14APR23 35.0 P ",
-                    "SELL",
-                    Decimal(-1),
-                    Money(Decimal("50"), "EUR"),
-                    Money(Decimal("60"), "USD")
-                ),
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20230421"),
-                    "Buy 1 XXX 14APR23 35.0 P ",
-                    "BUY",
-                    Decimal(1),
-                    Money(Decimal("-5.50"), "EUR"),
-                    Money(Decimal("-6"), "USD")
-                )
-            ]
-        )
-
-        profit = trade.calculate_profit_per_year({2022: date(2023, 5, 1)})
-
-        self.assertEqual([2022, 2023], list(profit.keys()))
-        self.assertEqual(Money(Decimal("44.50"), "EUR"), profit[2022].total)
-        self.assertIsNone(profit[2023].total)
-
-    def test_profit_stillhalter_one_open_one_close_different_year_after_cut_off(self):
-        trade = OptionTrade(
-            "XXX",
-            "Description",
-            date.fromisoformat("20220414"),
-            [
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20220301"),
-                    "Sell 1 XXX 14APR23 35.0 P ",
-                    "SELL",
-                    Decimal(-1),
-                    Money(Decimal("50"), "EUR"),
-                    Money(Decimal("60"), "USD")
-                ),
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20230421"),
-                    "Buy 1 XXX 14APR23 35.0 P ",
-                    "BUY",
-                    Decimal(1),
-                    Money(Decimal("-5.50"), "EUR"),
-                    Money(Decimal("-6"), "USD")
-                )
-            ]
-        )
-
-        profit = trade.calculate_profit_per_year({2022: date(2023, 2, 1)})
+        profit = trade.calculate_profit_per_year()
 
         self.assertEqual([2022, 2023], list(profit.keys()))
         self.assertEqual(Money(Decimal("50"), "EUR"), profit[2022].total)
@@ -472,7 +406,7 @@ class OptionsTests(unittest.TestCase):
             ]
         )
 
-        profit = trade.calculate_profit_per_year({})
+        profit = trade.calculate_profit_per_year()
 
         self.assertEqual([2022, 2023], list(profit.keys()))
         self.assertEqual(Money(Decimal("47.25"), "EUR"), profit[2022].total)
@@ -514,53 +448,11 @@ class OptionsTests(unittest.TestCase):
             ]
         )
 
-        profit = trade.calculate_profit_per_year({})
+        profit = trade.calculate_profit_per_year()
 
         self.assertEqual([2022, 2023], list(profit.keys()))
         self.assertEqual(Money(Decimal("150"), "EUR"), profit[2022].total)
         self.assertEqual(Money(Decimal("44.50"), "EUR"), profit[2023].total)
-
-    def test_profit_stillhalter_one_open_one_open_two_close_with_cut_off(self):
-        trade = OptionTrade(
-            "XXX",
-            "Description",
-            date.fromisoformat("20220414"),
-            [
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20220301"),
-                    "Sell 1 XXX 14APR23 35.0 P ",
-                    "SELL",
-                    Decimal(-1),
-                    Money(Decimal("150"), "EUR"),
-                    Money(Decimal("160"), "USD")
-                ),
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20230301"),
-                    "Sell 1 XXX 14APR23 35.0 P ",
-                    "SELL",
-                    Decimal(-1),
-                    Money(Decimal("50"), "EUR"),
-                    Money(Decimal("60"), "USD")
-                ),
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20230421"),
-                    "Buy 2 XXX 14APR23 35.0 P ",
-                    "BUY",
-                    Decimal(2),
-                    Money(Decimal("-9"), "EUR"),
-                    Money(Decimal("-10"), "USD")
-                )
-            ]
-        )
-
-        profit = trade.calculate_profit_per_year({2022: date(2023, 6, 1)})
-
-        self.assertEqual([2022, 2023], list(profit.keys()))
-        self.assertEqual(Money(Decimal("145.50"), "EUR"), profit[2022].total)
-        self.assertEqual(Money(Decimal("45.50"), "EUR"), profit[2023].total)
 
     def test_profit_termin_one_open(self):
         trade = OptionTrade(
@@ -580,7 +472,7 @@ class OptionsTests(unittest.TestCase):
             ]
         )
 
-        profit = trade.calculate_profit_per_year({})
+        profit = trade.calculate_profit_per_year()
 
         self.assertTrue(2022 in profit.keys())
         self.assertEqual(Money(Decimal(-50), "EUR"), profit[2022].total)
@@ -612,7 +504,7 @@ class OptionsTests(unittest.TestCase):
             ]
         )
 
-        profit = trade.calculate_profit_per_year({})
+        profit = trade.calculate_profit_per_year()
 
         self.assertTrue(2022 in profit.keys())
         self.assertEqual(Money(Decimal("-44.50"), "EUR"), profit[2022].total)
@@ -644,73 +536,7 @@ class OptionsTests(unittest.TestCase):
             ]
         )
 
-        profit = trade.calculate_profit_per_year({})
-
-        self.assertEqual([2022, 2023], list(profit.keys()))
-        self.assertEqual(Money(Decimal("-50"), "EUR"), profit[2022].total)
-        self.assertEqual(Money(Decimal("5.50"), "EUR"), profit[2023].total)
-
-    def test_profit_termin_one_open_one_close_different_year_before_cut_off(self):
-        trade = OptionTrade(
-            "XXX",
-            "Description",
-            date.fromisoformat("20220414"),
-            [
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20220301"),
-                    "Buy 1 XXX 14APR23 35.0 P ",
-                    "BUY",
-                    Decimal(-1),
-                    Money(Decimal("-50"), "EUR"),
-                    Money(Decimal("-60"), "USD")
-                ),
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20230421"),
-                    "Sell 1 XXX 14APR23 35.0 P ",
-                    "SELL",
-                    Decimal(-1),
-                    Money(Decimal("5.50"), "EUR"),
-                    Money(Decimal("6"), "USD")
-                )
-            ]
-        )
-
-        profit = trade.calculate_profit_per_year({2022: date(2023, 5, 1)})
-
-        self.assertEqual([2022, 2023], list(profit.keys()))
-        self.assertEqual(Money(Decimal("-50"), "EUR"), profit[2022].total)
-        self.assertEqual(Money(Decimal("5.50"), "EUR"), profit[2023].total)
-
-    def test_profit_termin_one_open_one_close_different_year_after_cut_off(self):
-        trade = OptionTrade(
-            "XXX",
-            "Description",
-            date.fromisoformat("20220414"),
-            [
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20220301"),
-                    "Buy 1 XXX 14APR23 35.0 P ",
-                    "BUY",
-                    Decimal(1),
-                    Money(Decimal("-50"), "EUR"),
-                    Money(Decimal("-60"), "USD")
-                ),
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20230421"),
-                    "Sell 1 XXX 14APR23 35.0 P ",
-                    "SELL",
-                    Decimal(-1),
-                    Money(Decimal("5.50"), "EUR"),
-                    Money(Decimal("6"), "USD")
-                )
-            ]
-        )
-
-        profit = trade.calculate_profit_per_year({2022: date(2023, 2, 1)})
+        profit = trade.calculate_profit_per_year()
 
         self.assertEqual([2022, 2023], list(profit.keys()))
         self.assertEqual(Money(Decimal("-50"), "EUR"), profit[2022].total)
@@ -752,7 +578,7 @@ class OptionsTests(unittest.TestCase):
             ]
         )
 
-        profit = trade.calculate_profit_per_year({})
+        profit = trade.calculate_profit_per_year()
 
         self.assertEqual([2022, 2023], list(profit.keys()))
         self.assertEqual(Money(Decimal("-47.25"), "EUR"), profit[2022].total)
@@ -794,53 +620,11 @@ class OptionsTests(unittest.TestCase):
             ]
         )
 
-        profit = trade.calculate_profit_per_year({})
+        profit = trade.calculate_profit_per_year()
 
         self.assertEqual([2022, 2023], list(profit.keys()))
         self.assertEqual(Money(Decimal("-150"), "EUR"), profit[2022].total)
         self.assertEqual(Money(Decimal("-44.50"), "EUR"), profit[2023].total)
-
-    def test_profit_termin_one_open_one_open_two_close_with_cut_off(self):
-        trade = OptionTrade(
-            "XXX",
-            "Description",
-            date.fromisoformat("20220414"),
-            [
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20220301"),
-                    "Buy 1 XXX 14APR23 35.0 P ",
-                    "BUY",
-                    Decimal(1),
-                    Money(Decimal("-150"), "EUR"),
-                    Money(Decimal("-160"), "USD")
-                ),
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20230301"),
-                    "Buy 1 XXX 14APR23 35.0 P ",
-                    "BUY",
-                    Decimal(1),
-                    Money(Decimal("-50"), "EUR"),
-                    Money(Decimal("-60"), "USD")
-                ),
-                OptionTransaction(
-                    "tradeId",
-                    date.fromisoformat("20230421"),
-                    "Sell 2 XXX 14APR23 35.0 P ",
-                    "SELL",
-                    Decimal(-2),
-                    Money(Decimal("9"), "EUR"),
-                    Money(Decimal("10"), "USD")
-                )
-            ]
-        )
-
-        profit = trade.calculate_profit_per_year({2022: date(2023, 6, 1)})
-
-        self.assertEqual([2022, 2023], list(profit.keys()))
-        self.assertEqual(Money(Decimal("-150"), "EUR"), profit[2022].total)
-        self.assertEqual(Money(Decimal("-41"), "EUR"), profit[2023].total)
 
 
 if __name__ == '__main__':

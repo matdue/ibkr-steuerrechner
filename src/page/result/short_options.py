@@ -25,6 +25,4 @@ def display_stillhalter(df: pd.DataFrame):
 
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
-cut_off_dates = {int(year): date
-                 for year, date in st.session_state.get("cut_off_dates", {}).items()}
-display_stillhalter(report.get_options(selected_year, OptionType.STILLHALTERGESCHAEFT, cut_off_dates))
+display_stillhalter(report.get_options(selected_year, OptionType.STILLHALTERGESCHAEFT))

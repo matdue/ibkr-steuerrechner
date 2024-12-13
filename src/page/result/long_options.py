@@ -25,4 +25,4 @@ def display_termingeschaefte(df: pd.DataFrame):
 
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
-display_termingeschaefte(report.get_options(selected_year, OptionType.TERMINGESCHAEFT, {}))
+display_termingeschaefte(report.get_options(selected_year, OptionType.TERMINGESCHAEFT))

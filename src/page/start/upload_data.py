@@ -50,4 +50,4 @@ except DataError as error:
 left, right = st.columns([2, 1])
 left.page_link("page/start/create_statement.py", label="Zurück", icon=":material/arrow_back:")
 if st.session_state.get("report", None) is not None:
-    right.page_link("page/start/tax_report_dates.py", label="Weiter", icon=":material/arrow_forward:")
+    right.page_link("page/start/report.py", label="Weiter", icon=":material/arrow_forward:")
