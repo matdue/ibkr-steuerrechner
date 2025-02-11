@@ -1,22 +1,24 @@
 from datetime import date
 from decimal import Decimal
 from itertools import groupby
-from typing import Iterable, Tuple
+from typing import Iterable
 
 import pandas as pd
 
 from deposit import Deposit
+from depot_position import DepotPosition, DepotPositionType
 from dividend import Dividend
-from foreign_currency_bucket import ForeignCurrencyBucket, ForeignCurrencyFlow, TaxRelevance
+from foreign_currency_account import ForeignCurrencyAccount
 from forex import Forex
 from interest import Interest
 from money import Money
-from options import OptionTransaction, OptionTrade, OptionType
+from option import Option
 from other_fee import OtherFee
-from stock import StockTrade, StockTransaction, StockType, ReturnTransaction
-from treasury_bill import TreasuryBillTrade, TreasuryBillTransaction
+from stock import Stock
+from transaction import Transaction, BuySell, OpenCloseIndicator, AcquisitionType
+from transaction_collection import apply_estg_23, TransactionCollection
+from treasury_bill import TreasuryBill
 from unknown_line import UnknownLine
-from utils import lookahead
 
 
 class Report:
@@ -26,11 +28,11 @@ class Report:
         self._interests: list[Interest] = []
         self._other_fees: list[OtherFee] = []
         self._dividends: list[Dividend] = []
-        self._option_trades: list[OptionTrade] = []
-        self._stock_trades: list[StockTrade] = []
-        self._treasury_bill_trades: list[TreasuryBillTrade] = []
+        self._stocks: list[Stock] = []
+        self._options: list[Option] = []
+        self._treasury_bills: list[TreasuryBill] = []
         self._forexes: list[Forex] = []
-        self._foreign_currency_buckets: dict[str, ForeignCurrencyBucket] = {}
+        self._foreign_currency_accounts: dict[str, ForeignCurrencyAccount] = {}
         self._unknown_lines: list[UnknownLine] = []
 
     def register_year(self, row_date: date):
@@ -47,6 +49,7 @@ class Report:
                             Money(row["Amount"], row["CurrencyPrimary"]),
                             row["ActivityDescription"])
         self._interests.append(interest)
+        self.add_foreign_currency_flow(row, False)
 
     def add_other_fee(self, row: pd.Series):
         other_fee = OtherFee(row["Date"],
@@ -65,113 +68,48 @@ class Report:
         self._dividends.append(dividend)
         self.add_foreign_currency_flow(row, False)
 
-    def add_option_trade(self, row: pd.Series):
-        transaction = OptionTransaction(row["TradeID"],
-                                        row["Date"],
-                                        row["ActivityDescription"],
-                                        row["Buy/Sell"],
-                                        row["TradeQuantity"],
-                                        Money(row["Amount"], row["CurrencyPrimary"]),
-                                        Money(row["Amount_orig"], row["CurrencyPrimary_orig"]))
+    def _process_treasury_bill(self, row: pd.Series):
         symbol = row["Symbol"]
-        open_trade = next((trade
-                           for trade in self._option_trades
-                           if not trade.closed and trade.symbol == symbol), None)
-        if open_trade is None:
-            new_trade = OptionTrade(symbol,
-                                    row["Description"],
-                                    row["Expiry"],
-                                    [transaction])
-            self._option_trades.append(new_trade)
-        else:
-            remaining = open_trade.add_transaction(transaction)
-            if remaining is not None:
-                new_trade = OptionTrade(symbol,
-                                        row["Description"],
-                                        row["Expiry"],
-                                        [remaining])
-                self._option_trades.append(new_trade)
-
-        self.add_foreign_currency_flow(row, False)
-
-    def add_stock_trade(self, row: pd.Series):
-        transaction = StockTransaction(row["TradeID"],
-                                       row["Date"],
-                                       row["ActivityDescription"],
-                                       row["Buy/Sell"],
-                                       row["TradeQuantity"],
-                                       Money(row["Amount"], row["CurrencyPrimary"]),
-                                       Money(row["Amount_orig"], row["CurrencyPrimary_orig"]))
-        symbol = row["Symbol"]
-        open_trade = next((trade
-                           for trade in self._stock_trades
-                           if not trade.closed and trade.symbol == symbol), None)
-        if open_trade is None:
-            new_trade = StockTrade(symbol,
-                                   row["Description"],
-                                   [transaction])
-            self._stock_trades.append(new_trade)
-        else:
-            remaining = open_trade.add_transaction(transaction)
-            if remaining is not None:
-                new_trade = StockTrade(symbol,
-                                       row["Description"],
-                                       [remaining])
-                self._stock_trades.append(new_trade)
-
-        self.add_foreign_currency_flow(row, True)
-
-    def add_treasury_bill_trade(self, row: pd.Series):
-        transaction = TreasuryBillTransaction(row["TradeID"],
-                                              row["Date"],
-                                              row["ActivityDescription"],
-                                              row["Buy/Sell"],
-                                              row["TradeQuantity"],
-                                              Money(row["Amount"], row["CurrencyPrimary"]),
-                                              Money(row["Amount_orig"], row["CurrencyPrimary_orig"]))
-        if row["ActivityCode"] == "CORP":
-            # Maturity record does not include quantity, so we copy it from amount as 1 quantity = 1 USD
-            transaction.quantity = -row["Amount_orig"]
-
-        symbol = row["Symbol"]
-        open_trade = next((trade
-                           for trade in self._treasury_bill_trades
-                           if not trade.closed and trade.symbol == symbol), None)
-        if open_trade is None:
-            new_trade = TreasuryBillTrade(symbol,
-                                          row["Description"],
-                                          [transaction])
-            self._treasury_bill_trades.append(new_trade)
-        else:
-            remaining = open_trade.add_transaction(transaction)
-            if remaining is not None:
-                new_trade = TreasuryBillTrade(symbol,
-                                              row["Description"],
-                                              [remaining])
-                self._treasury_bill_trades.append(new_trade)
-
-        self.add_foreign_currency_flow(row, True)
+        depot_position = next((p for p in self._treasury_bills if p.symbol == symbol and not p.closed), None)
+        if depot_position is None:
+            return
+        # Maturity record does not include quantity, so we copy it from amount with 1 quantity = 1 USD
+        maturity_transaction = Transaction(
+            None,
+            row["Date"],
+            row["ActivityDescription"],
+            None,
+            OpenCloseIndicator.CLOSE,
+            -row["Amount_orig"],
+            Money(row["Amount"], row["CurrencyPrimary"]),
+            Money(row["Amount_orig"], row["CurrencyPrimary_orig"]),
+            row["FXRateToBase_orig"]
+        )
+        depot_position.add_transaction(maturity_transaction)
 
     def add_foreign_currency_flow(self, row: pd.Series, taxable: bool):
         foreign_currency_code = row["CurrencyPrimary_orig"]
-        if not foreign_currency_code:
+        if not foreign_currency_code or pd.isna(foreign_currency_code):
             return
 
-        foreign_currency_bucket = self._foreign_currency_buckets.get(foreign_currency_code, None)
-        if foreign_currency_bucket is None:
-            foreign_currency_bucket = ForeignCurrencyBucket(foreign_currency_code)
-            self._foreign_currency_buckets[foreign_currency_code] = foreign_currency_bucket
+        foreign_currency_account = self._foreign_currency_accounts.get(foreign_currency_code, None)
+        if foreign_currency_account is None:
+            foreign_currency_account = ForeignCurrencyAccount(foreign_currency_code)
+            self._foreign_currency_accounts[foreign_currency_code] = foreign_currency_account
 
-        foreign_currency_flow = ForeignCurrencyFlow(
+        amount_orig = Money(row["Amount_orig"].quantize(Decimal("1.00")), row["CurrencyPrimary_orig"])
+        foreign_currency_account.add_transaction(Transaction(
             row["TradeID"],
             row["Date"],
             row["ActivityDescription"],
-            Money(row["Amount"], row["CurrencyPrimary"]),
-            Money(row["Amount_orig"].quantize(Decimal("1.00")), row["CurrencyPrimary_orig"]),
+            BuySell.BUY if amount_orig.amount >= 0 else BuySell.SELL,
+            OpenCloseIndicator.OPEN if amount_orig.amount >= 0 else OpenCloseIndicator.CLOSE,
+            amount_orig.amount,
+            Money(row["Amount"].quantize(Decimal("1.00")), row["CurrencyPrimary"]).copy_sign(amount_orig),
+            amount_orig,
             row["FXRateToBase_orig"],
-            TaxRelevance.TAX_RELEVANT if taxable else TaxRelevance.TAX_IRRELEVANT
-        )
-        foreign_currency_bucket.add(foreign_currency_flow)
+            AcquisitionType.GENUINE if taxable else AcquisitionType.NON_GENUINE
+        ))
 
     def add_forex(self, row: pd.Series):
         forex = Forex(row["TradeID"],
@@ -187,21 +125,6 @@ class Report:
                                    Money(row["Amount"], row["CurrencyPrimary"]),
                                    row["ActivityDescription"])
         self._unknown_lines.append(unknown_line)
-
-    def close_expired_options(self, reporting_date: date):
-        for trade in self._option_trades:
-            if trade.closed:
-                continue
-            if trade.expiry > reporting_date:
-                continue
-            trade.close()
-
-    def finish(self, reporting_date: date):
-        self.close_expired_options(reporting_date)
-        for foreign_currency_bucket in self._foreign_currency_buckets.values():
-            returns, unconsumed_returns, unconsumed_accruals = foreign_currency_bucket.calculate_returns()
-            for currency_return in returns:
-                profit = currency_return.calculate_taxable_profit(reporting_date)
 
     def get_years(self) -> list[str]:
         years = sorted(self._years)
@@ -228,145 +151,132 @@ class Report:
                                   for x in self._interests
                                   if x.date.year == year_int))
 
-    def get_options(self, year: str, option_type: OptionType):
+    def get_options(self, year: str, depot_position_type: DepotPositionType):
         year_int = int(year)
 
-        def option_line(trades: Iterable[Tuple[OptionTrade, OptionTrade.Profit]]):
-            for trade_no, trade_profit in enumerate(trades):
-                trade, profit = trade_profit
-                for transaction_no, transaction_has_more in enumerate(lookahead(profit.transactions)):
-                    transaction, has_more = transaction_has_more
-                    line_no = f"{trade_no+1}.{transaction_no+1}"
-                    if transaction_no == 0:
-                        yield (trade_no,
-                               line_no,
-                               transaction.date,
-                               trade.description,
-                               trade.expiry,
-                               trade.closed,
-                               transaction.activity,
-                               transaction.tradeId,
-                               float(transaction.quantity),
-                               float(transaction.amount.amount),
-                               None if has_more else float(profit.total.amount))  # Write total into last line
-                    else:
-                        yield (trade_no,
-                               line_no,
-                               transaction.date,
-                               None,
-                               None,
-                               None,
-                               transaction.activity,
-                               transaction.tradeId,
-                               float(transaction.quantity),
-                               float(transaction.amount.amount),
-                               None if has_more else float(profit.total.amount))  # Write total into last line
+        def amount_or_zero(amount: Money | None):
+            return amount.amount if amount else Decimal("0.00")
 
-        trades_with_profit = ((trade, profit_of_year)
-                              for trade in self._option_trades
-                              if trade.option_type() == option_type
-                              for profit_of_year in [trade.calculate_profit_per_year().get(year_int)]
-                              if profit_of_year is not None)
-        return pd.DataFrame(columns=["sequence", "no", "date", "description", "expiry", "closed",
-                                     "activity", "trade_id", "quantity", "amount", "profit"],
-                            data=option_line(trades_with_profit))
+        def option_line(transactions: Iterable[TransactionCollection]):
+            for transaction_no, transaction in enumerate(transactions):
+                for opening_transaction in transaction.get_opening_transactions():
+                    yield (transaction_no,
+                           opening_transaction.date,
+                           opening_transaction.activity,
+                           opening_transaction.trade_id,
+                           opening_transaction.quantity,
+                           opening_transaction.amount.amount,
+                           None)
+                closing_transaction = transaction.get_closing_transaction()
+                yield (transaction_no,
+                       closing_transaction.date,
+                       closing_transaction.activity,
+                       closing_transaction.trade_id,
+                       closing_transaction.quantity,
+                       amount_or_zero(closing_transaction.amount),
+                       transaction.profit().amount)
+
+        transaction_collections = (collection
+                                   for option in self._options
+                                   if option.position_type() == depot_position_type
+                                   for collection in option.transaction_collections(year_int))
+        return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
+                            data=option_line(transaction_collections))
 
     def get_all_stocks(self, year: str):
         year_int = int(year)
 
-        def stock_line(transactions: Iterable[StockTransaction]):
+        def stock_line(transactions: Iterable[Transaction]):
             for transaction_no, transaction in enumerate(transactions):
                 yield (transaction_no,
                        transaction.date,
                        transaction.activity,
-                       transaction.tradeId,
+                       transaction.trade_id,
                        transaction.quantity,
                        float(transaction.amount.amount))
 
-        transactions_with_profit = (transaction
-                                    for trade in self._stock_trades
-                                    for transaction in trade.transactions
-                                    if transaction.date.year == year_int)
+        transactions = (transaction
+                        for stock in self._stocks
+                        for transaction in stock.transactions
+                        if transaction.date.year == year_int)
         return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount"],
-                            data=stock_line(transactions_with_profit))
+                            data=stock_line(transactions))
 
     def get_stocks(self, year: str):
         year_int = int(year)
 
-        def stock_line(transactions: Iterable[ReturnTransaction]):
-            for transaction_no, return_transaction in enumerate(transactions):
-                profit = return_transaction.calculate_profit()
-                for accrual in profit.accruals:
+        def stock_line(transactions: Iterable[TransactionCollection]):
+            for transaction_no, transaction in enumerate(transactions):
+                for opening_transaction in transaction.get_opening_transactions():
                     yield (transaction_no,
-                           accrual.transaction.date,
-                           accrual.transaction.activity,
-                           accrual.transaction.tradeId,
-                           accrual.consumed_quantity,
-                           accrual.consumed_amount().amount,
+                           opening_transaction.date,
+                           opening_transaction.activity,
+                           opening_transaction.trade_id,
+                           opening_transaction.quantity,
+                           opening_transaction.amount.amount,
                            None)
+                closing_transaction = transaction.get_closing_transaction()
                 yield (transaction_no,
-                       return_transaction.transaction.date,
-                       return_transaction.transaction.activity,
-                       return_transaction.transaction.tradeId,
-                       return_transaction.transaction.quantity,
-                       return_transaction.transaction.amount.amount,
-                       profit.profit_base.amount)
+                       closing_transaction.date,
+                       closing_transaction.activity,
+                       closing_transaction.trade_id,
+                       closing_transaction.quantity,
+                       closing_transaction.amount.amount,
+                       transaction.profit().amount)
 
-        return_transactions = (return_transaction
-                               for trade in self._stock_trades
-                               if trade.stock_type() == StockType.LONG  # Ignore short trades as they are not supported
-                               for return_transaction in trade.calculate_returns()[0]
-                               if return_transaction.transaction.date.year == year_int)
+        transaction_collections = (collection
+                                   for stock in self._stocks
+                                   if stock.position_type() == DepotPositionType.LONG  # Only long positions are supported
+                                   for collection in stock.transaction_collections(year_int))
         return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
-                            data=stock_line(return_transactions))
+                            data=stock_line(transaction_collections))
 
     def get_all_treasury_bills(self, year: str):
         year_int = int(year)
 
-        def stock_line(transactions: Iterable[TreasuryBillTransaction]):
+        def tbill_line(transactions: Iterable[Transaction]):
             for transaction_no, transaction in enumerate(transactions):
                 yield (transaction_no,
                        transaction.date,
                        transaction.activity,
-                       transaction.tradeId,
+                       transaction.trade_id,
                        transaction.quantity,
                        float(transaction.amount.amount))
 
-        transactions_with_profit = (transaction
-                                    for trade in self._treasury_bill_trades
-                                    for transaction in trade.transactions
-                                    if transaction.date.year == year_int)
+        transactions = (transaction
+                        for t_bill in self._treasury_bills
+                        for transaction in t_bill.transactions
+                        if transaction.date.year == year_int)
         return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount"],
-                            data=stock_line(transactions_with_profit))
+                            data=tbill_line(transactions))
 
     def get_treasury_bills(self, year: str):
         year_int = int(year)
 
-        def stock_line(transactions: Iterable[ReturnTransaction]):
-            for transaction_no, return_transaction in enumerate(transactions):
-                profit = return_transaction.calculate_profit()
-                for accrual in profit.accruals:
+        def tbill_line(transactions: Iterable[TransactionCollection]):
+            for transaction_no, transaction in enumerate(transactions):
+                for opening_transaction in transaction.get_opening_transactions():
                     yield (transaction_no,
-                           accrual.transaction.date,
-                           accrual.transaction.activity,
-                           accrual.transaction.tradeId,
-                           accrual.consumed_quantity,
-                           accrual.consumed_amount().amount,
+                           opening_transaction.date,
+                           opening_transaction.activity,
+                           opening_transaction.trade_id,
+                           opening_transaction.quantity,
+                           opening_transaction.amount.amount,
                            None)
+                closing_transaction = transaction.get_closing_transaction()
                 yield (transaction_no,
-                       return_transaction.transaction.date,
-                       return_transaction.transaction.activity,
-                       return_transaction.transaction.tradeId,
-                       return_transaction.transaction.quantity,
-                       return_transaction.transaction.amount.amount,
-                       profit.profit_base.amount)
+                       closing_transaction.date,
+                       closing_transaction.activity,
+                       closing_transaction.trade_id,
+                       closing_transaction.quantity,
+                       closing_transaction.amount.amount,
+                       transaction.profit().amount)
 
-        return_transactions = (return_transaction
-                               for trade in self._treasury_bill_trades
-                               for return_transaction in trade.calculate_returns()[0]
-                               if return_transaction.transaction.date.year == year_int)
+        transaction_collections = (collection
+                                   for t_bill in self._treasury_bills
+                                   for collection in t_bill.transaction_collections(year_int))
         return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
-                            data=stock_line(return_transactions))
+                            data=tbill_line(transaction_collections))
 
     def get_dividends(self, year: str):
         year_int = int(year)
@@ -400,71 +310,56 @@ class Report:
                                   for x in self._forexes
                                   if x.date.year == year_int))
 
-    def get_foreign_currencies(self, year: str):
+    def get_foreign_currencies2(self, year: str, interest_bearing_account: bool):
         year_int = int(year)
-        reporting_date = date(year_int + 1, 1, 1)
-        result: dict[str, pd.DataFrame] = {}
-        for currency in sorted(self._foreign_currency_buckets.keys()):
-            bucket = self._foreign_currency_buckets[currency]
-            returns, unconsumed_returns, unconsumed_accruals = bucket.calculate_returns()
-            returns_in_year = (x for x in returns if x.flow.date.year == year_int)
 
+        def currency_line(transactions: Iterable[TransactionCollection]):
+            for transaction_no, transaction in enumerate(transactions):
+                profit = -transaction.profit()
+                for opening_txn_no, opening_transaction in enumerate(transaction.get_opening_transactions()):
+                    if opening_txn_no == 0:
+                        title = "Zugang" if len(transaction.get_opening_transactions()) == 1 else "Zugänge"
+                    else:
+                        title = ""
+                    yield (transaction_no,
+                           title,
+                           opening_transaction.date,
+                           opening_transaction.activity,
+                           opening_transaction.trade_id,
+                           opening_transaction.acquisition == AcquisitionType.GENUINE or interest_bearing_account,
+                           opening_transaction.amount_orig.amount,
+                           opening_transaction.fx_rate,
+                           opening_transaction.amount.amount.quantize(Decimal("1.00")),
+                           None)
+                closing_transaction = transaction.get_closing_transaction()
+                yield (transaction_no,
+                       "Abgang",
+                       closing_transaction.date,
+                       closing_transaction.activity,
+                       closing_transaction.trade_id,
+                       closing_transaction.acquisition == AcquisitionType.GENUINE or interest_bearing_account,
+                       closing_transaction.amount_orig.amount,
+                       closing_transaction.fx_rate,
+                       closing_transaction.amount.amount.quantize(Decimal("1.00")),
+                       profit.amount.quantize(Decimal("1.00")))
+
+        result: dict[str, pd.DataFrame] = {}
+        for currency in sorted(self._foreign_currency_accounts.keys()):
+            account = self._foreign_currency_accounts[currency]
+            transaction_pairs = account.transaction_pairs(year_int)
+            if not interest_bearing_account:
+                transaction_pairs = apply_estg_23(transaction_pairs)
             df = pd.DataFrame(columns=["sequence",
                                        "Fremdwährung",
-                                       "TradeID",
                                        "date",
                                        "Aktivität",
+                                       "TradeID",
                                        "Ergebnisrelevant",
-                                       f"{currency} (gesamt)",
-                                       f"{currency} (verbraucht)",
-                                       f"{currency} (ergebnisrelevant)",
+                                       currency,
                                        "Devisenkurs",
-                                       "EUR (ergebnisrelevant)",
-                                       "profit"])
-            for return_no, return_flow in enumerate(returns_in_year):
-                profit = return_flow.calculate_taxable_profit(reporting_date)
-                rows = [
-                    [return_no,
-                     "Abgang",
-                     return_flow.flow.tradeId,
-                     return_flow.flow.date,
-                     return_flow.flow.description,
-                     return_flow.flow.is_tax_relevant(reporting_date),
-                     return_flow.flow.amount_orig.amount,
-                     return_flow.consumed().amount * return_flow.flow.amount_orig.sign(),
-                     profit.tax_relevant_orig.amount * return_flow.flow.amount_orig.sign(),
-                     return_flow.flow.fx_rate,
-                     profit.tax_relevant_base.amount.quantize(Decimal("1.00")) * return_flow.flow.amount_orig.sign(),
-                     None]
-                ]
-                for consumed in profit.accruals:
-                    rows.append([return_no,
-                                 "Zugang",
-                                 consumed.flow.tradeId,
-                                 consumed.flow.date,
-                                 consumed.flow.description,
-                                 consumed.flow.is_tax_relevant(reporting_date),
-                                 consumed.flow.amount_orig.amount,
-                                 consumed.consumed().amount,
-                                 consumed.consumed_tax_relevant(reporting_date).amount,
-                                 consumed.flow.fx_rate,
-                                 consumed.consumed_base_tax_relevant(reporting_date).amount.quantize(Decimal("1.00")),
-                                 None])
-                rows.append([return_no,
-                             None,
-                             None,
-                             None,
-                             None,
-                             None,
-                             None,
-                             None,
-                             None,
-                             None,
-                             None,
-                             profit.profit_base.amount.quantize(Decimal("1.00"))])
-
-                df_return = pd.DataFrame(rows, columns=df.columns)
-                df = pd.concat([df, df_return], ignore_index=True)
+                                       "EUR",
+                                       "profit"],
+                              data=currency_line(transaction_pairs))
 
             if not df.empty:
                 result[currency] = df
@@ -478,23 +373,21 @@ class Report:
                                   for x in self._unknown_lines
                                   if x.date.year == year_int))
 
-
-    def process(self, row: pd.Series):
+    def process_statement(self, row: pd.Series):
         self.register_year(row["Date"])
         match row["ActivityCode"]:
             case "DEP" | "WITH":
                 self.add_deposit(row)
 
             case "SELL" | "BUY" | "ASSIGN":
+                # Processed in process_trade(), registering the foreign currency only
                 match row["AssetClass"]:
                     case "BILL":
-                        self.add_treasury_bill_trade(row)
+                        self.add_foreign_currency_flow(row, True)
                     case "OPT":
-                        self.add_option_trade(row)
+                        self.add_foreign_currency_flow(row, False)
                     case "STK":
-                        self.add_stock_trade(row)
-                    case _:
-                        self.add_unknown_line(row)
+                        self.add_foreign_currency_flow(row, True)
 
             case "DIV" | "PIL" | "FRTAX":
                 self.add_dividend(row)
@@ -509,7 +402,94 @@ class Report:
                 self.add_interest(row)
 
             case "CORP":
-                self.add_treasury_bill_trade(row)
+                self._process_treasury_bill(row)
 
             case _:
                 self.add_unknown_line(row)
+
+    def _find_stock_position(self, symbol: str, asset_class: str) -> Stock | None:
+        depot_position = next((stock
+                               for stock in self._stocks
+                               if stock.symbol == symbol and not stock.closed),
+                              None)
+        if depot_position is None:
+            new_stock = Stock(symbol, asset_class)
+            self._stocks.append(new_stock)
+            depot_position = new_stock
+
+        return depot_position
+
+    def _find_option_position(self, symbol: str, asset_class: str) -> Option | None:
+        depot_position = next((option
+                               for option in self._options
+                               if option.symbol == symbol and not option.closed),
+                              None)
+        if depot_position is None:
+            new_option = Option(symbol, asset_class)
+            self._options.append(new_option)
+            depot_position = new_option
+
+        return depot_position
+
+    def _find_treasury_bill_position(self, symbol: str, asset_class: str) -> TreasuryBill | None:
+        depot_position = next((t_bill
+                               for t_bill in self._treasury_bills
+                               if t_bill.symbol == symbol and not t_bill.closed),
+                              None)
+        if depot_position is None:
+            new_t_bill = TreasuryBill(symbol, asset_class)
+            self._treasury_bills.append(new_t_bill)
+            depot_position = new_t_bill
+
+        return depot_position
+
+    def process_trade(self, row: pd.Series):
+        self.register_year(row["TradeDate"])
+        asset_class = row["AssetClass"]
+        if asset_class not in ["STK", "OPT", "BILL", "CASH"]:
+            raise NotImplementedError()
+        symbol = row["Symbol"]
+        trade_id = row["TradeID"]
+        buy_sell = row["Buy/Sell"]
+
+        depot_position: DepotPosition | None = None
+        match asset_class:
+            case "STK":
+                depot_position = self._find_stock_position(symbol, asset_class)
+
+            case "OPT":
+                depot_position = self._find_option_position(symbol, asset_class)
+
+            case "BILL":
+                depot_position = self._find_treasury_bill_position(symbol, asset_class)
+
+            case "CASH":
+                # Handle cash trades in process_statement()
+                return
+
+        if pd.isna(row["Amount"]):
+            # Trade without corresponding entry in statement of funds => Trade without moving any money,
+            # e.g. a worthless expired option
+            depot_position.add_transaction(Transaction(
+                trade_id,
+                row["TradeDate"],
+                None,
+                BuySell(buy_sell),
+                OpenCloseIndicator(row["Open/CloseIndicator"]),
+                row["Quantity"],
+                None,
+                None,
+                None
+            ))
+        else:
+            depot_position.add_transaction(Transaction(
+                row["TradeID"],
+                row["Date"],
+                row["ActivityDescription"],
+                BuySell(row["Buy/Sell"]),
+                OpenCloseIndicator(row["Open/CloseIndicator"]),
+                row["TradeQuantity"],
+                Money(row["Amount"], row["CurrencyPrimary"]),
+                Money(row["Amount_orig"], row["CurrencyPrimary_orig"]),
+                row["FXRateToBase_orig"]
+            ))

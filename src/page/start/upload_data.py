@@ -1,28 +1,46 @@
 import io
-from datetime import date
 
 import pandas as pd
 import streamlit as st
 
-from flex_query import read_report, DataError, REQUIRED_COLUMNS
+from flex_query import DataError, read_statement_of_funds, read_trades, STATEMENT_OF_FUNDS_COLUMNS, TRADES_COLUMNS
 from report import Report
 
 
 def create_report(data_files: list):
-    data_dfs = [read_report(data_file.name, io.TextIOWrapper(data_file, "utf-8")) for data_file in data_files]
+    df_all_trades = []
+    df_all_statement_of_funds = []
+    for data_file in data_files:
+        data_file_content = data_file.getvalue().decode("utf-8")
+        df_trades = read_trades(data_file.name, io.StringIO(data_file_content))
+        df_statement_of_funds = read_statement_of_funds(data_file.name, io.StringIO(data_file_content))
 
-    # Skip empty reports
-    data_dfs = [data_df for data_df in data_dfs if not data_df.empty]
+
+        # Mix trade data into statement data and vice versa
+        df_trades = df_trades.merge(df_statement_of_funds.filter(["TradeID", "AssetClass", "Symbol", "Buy/Sell",
+                                                                  "Date", "ActivityDescription", "TradeQuantity",
+                                                                  "Amount", "CurrencyPrimary", "Amount_orig",
+                                                                  "CurrencyPrimary_orig", "FXRateToBase_orig"]),
+                                    how="left",
+                                    on=["TradeID", "AssetClass", "Symbol", "Buy/Sell"])
+        if not df_trades.empty:
+            df_all_trades.append(df_trades)
+        df_statement_of_funds = df_statement_of_funds.merge(df_trades.filter(["TradeID", "Open/CloseIndicator"]),
+                                                            how="left",
+                                                            on="TradeID")
+        if not df_statement_of_funds.empty:
+            df_all_statement_of_funds.append(df_statement_of_funds)
 
     # Ensure chronological order of reports and keep order within each report as is
-    data_dfs.sort(key=lambda data_df: data_df["ReportDate"].iloc[0])
+    df_all_trades.sort(key=lambda data_df: data_df["TradeDate"].iloc[0])
+    df_all_statement_of_funds.sort(key=lambda data_df: data_df["Date"].iloc[0])
 
-    if len(data_dfs) != 0:
-        # German law requires FIFO, i.e. we have to process line by line
-        report = Report()
-        pd.concat(data_dfs).apply(lambda row: report.process(row), axis=1)
-        report.finish(date.today())
-        return report
+    result = Report()
+    if df_all_trades:
+        pd.concat(df_all_trades).apply(lambda row: result.process_trade(row), axis=1)
+    if df_all_statement_of_funds:
+        pd.concat(df_all_statement_of_funds).apply(lambda row: result.process_statement(row), axis=1)
+    return result
 
 
 st.set_page_config("IBKR Steuerrechner", layout="wide")
@@ -39,12 +57,13 @@ intro.write("""Alle hochgeladenen Daten werden auf einem Server in den USA verar
     Browserfenster schließen, werden die Daten aus dem Speicher entfernt.""")
 
 try:
-    data_files = intro.file_uploader("Kapitalflussrechnung (CSV-Format)", type="csv", accept_multiple_files=True)
-    report = create_report(data_files)
+    uploads = intro.file_uploader("Kapitalflussrechnung+Trades (CSV-Format)", type="csv", accept_multiple_files=True)
+    report = create_report(uploads)
     st.session_state["report"] = report
 except DataError as error:
-    intro.error(f"""Datei {error} scheint keine CSV-Datei mit der Kapitalflussrechnung aus der Flex-Query zu sein.
-    Es wird eine CSV-Datei mit mindestens diesen Spalten erwartet: {", ".join(sorted(REQUIRED_COLUMNS))}""")
+    intro.error(f"""Datei {error} scheint keine CSV-Datei mit der Kapitalflussrechnung und den Trades aus der Flex-Query
+    zu sein. Es wird eine CSV-Datei mit mindestens diesen Spalten erwartet: 
+    {", ".join(sorted(set(STATEMENT_OF_FUNDS_COLUMNS+TRADES_COLUMNS)))}""")
 
 
 left, right = st.columns([2, 1])

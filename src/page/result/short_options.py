@@ -1,15 +1,15 @@
 import pandas as pd
 import streamlit as st
 
+from depot_position import DepotPositionType
 from i18n import format_currency
-from options import OptionType
 from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
 
 
-def display_stillhalter(df: pd.DataFrame):
+def display_short_options(df: pd.DataFrame):
     st.header("Stillhaltergeschäfte")
     st.write("""Gewinne und Verluste aus Stillhaltergeschäften werden nach der FIFO-Methode berechnet und hier 
-        ausgewiesen. Stillhaltergeschäfte sind sofort steuerlich relevant, da der Zufluss von Kapital sofort erfolgt. 
+        ausgewiesen. Stillhaltergeschäfte sind sofort steuerlich relevant (vgl. §20 Abs. 1 Nr. 11 EStG). 
         Der Sonderfall Barausgleich wird nicht berücksichtigt.""")
     profitable_trades = df.query("profit >= 0")["profit"].sum()
     lossy_trades = df.query("profit < 0")["profit"].sum()
@@ -25,4 +25,4 @@ def display_stillhalter(df: pd.DataFrame):
 
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
-display_stillhalter(report.get_options(selected_year, OptionType.STILLHALTERGESCHAEFT))
+display_short_options(report.get_options(selected_year, DepotPositionType.SHORT))

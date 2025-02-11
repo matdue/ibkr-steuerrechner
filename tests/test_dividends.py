@@ -3,18 +3,13 @@ from datetime import date
 from decimal import Decimal
 
 from dividend import Dividend
-from flex_query import read_report
 from money import Money
-from report import Report
+from testutils import read_report
 
 
 class DepositTests(unittest.TestCase):
     def test_ordinary(self):
-        df = read_report("resources/dividends/ordinary.csv")
-        result = Report()
-
-        df.apply(lambda row: result.process(row), axis=1)
-        result.finish(date.today())
+        result = read_report("resources/dividends/ordinary.csv")
 
         self.assertEqual(4, len(result._dividends))
         self.assertEqual([
@@ -49,11 +44,7 @@ class DepositTests(unittest.TestCase):
         ], result._dividends)
 
     def test_payment_in_lieu(self):
-        df = read_report("resources/dividends/payment_in_lieu.csv")
-        result = Report()
-
-        df.apply(lambda row: result.process(row), axis=1)
-        result.finish(date.today())
+        result = read_report("resources/dividends/payment_in_lieu.csv")
 
         self.assertEqual(2, len(result._dividends))
         self.assertEqual([

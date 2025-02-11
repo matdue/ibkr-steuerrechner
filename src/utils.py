@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 # Source: https://stackoverflow.com/a/1630350
 def lookahead(iterable):
     """Pass through all values from the given iterable, augmented by the
@@ -17,3 +20,7 @@ def lookahead(iterable):
         last = val
     # Report the last value.
     yield last, False
+
+
+def value_or_none(value):
+    return value if pd.notna(value) else None

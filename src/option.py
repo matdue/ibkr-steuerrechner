@@ -1,5 +1,5 @@
 from depot_position import DepotPosition
 
 
-class Stock(DepotPosition):
+class Option(DepotPosition):
     ...

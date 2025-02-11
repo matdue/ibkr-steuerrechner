@@ -2,9 +2,10 @@ import pandas as pd
 import streamlit as st
 
 from i18n import format_date, format_currency, COLUMN_NAME
+from report import Report
 
 
-def ensure_report_is_available():
+def ensure_report_is_available() -> Report:
     report = st.session_state.get("report", None)
     if report is None:
         st.switch_page("page/start/upload_data.py")

@@ -16,6 +16,9 @@ class Money:
     amount: Decimal
     currency: str
 
+    def __str__(self):
+        return f"{self.amount} {self.currency}"
+
     def _validate_money_with_same_currency(self, other: Self):
         if not isinstance(other, Money):
             raise TypeError("Operand must be of type Money")
@@ -110,5 +113,10 @@ class Money:
     def copy_sign(self, other: Self) -> Self:
         return Money(self.amount.copy_sign(other.amount), self.currency)
 
-    def quantize(self, exp: Self, rounding=None, context=None):
-        return Money(self.amount.quantize(exp.amount, rounding, context), self.currency)
+    def quantize(self, exp: Self | Decimal, rounding=None, context=None):
+        if isinstance(exp, Money):
+            return Money(self.amount.quantize(exp.amount, rounding, context), self.currency)
+        elif isinstance(exp, Decimal):
+            return Money(self.amount.quantize(exp, rounding, context), self.currency)
+        else:
+            raise ValueError("exp must be either Money or Decimal")

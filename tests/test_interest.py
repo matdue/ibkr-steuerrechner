@@ -2,19 +2,14 @@ import unittest
 from datetime import date
 from decimal import Decimal
 
-from flex_query import read_report
 from interest import Interest
 from money import Money
-from report import Report
+from testutils import read_report
 
 
 class InterestTests(unittest.TestCase):
     def test_debit(self):
-        df = read_report("resources/interest/debit.csv")
-        result = Report()
-
-        df.apply(lambda row: result.process(row), axis=1)
-        result.finish(date.today())
+        result = read_report("resources/interest/debit.csv")
 
         self.assertEqual(1, len(result._interests))
         self.assertEqual(Interest(date.fromisoformat("20220706"),
@@ -22,11 +17,7 @@ class InterestTests(unittest.TestCase):
                                   "USD Debit Interest for Jun-2022"), result._interests[0])
 
     def test_credit(self):
-        df = read_report("resources/interest/credit.csv")
-        result = Report()
-
-        df.apply(lambda row: result.process(row), axis=1)
-        result.finish(date.today())
+        result = read_report("resources/interest/credit.csv")
 
         self.assertEqual(2, len(result._interests))
         self.assertEqual(Interest(date.fromisoformat("20230503"),
