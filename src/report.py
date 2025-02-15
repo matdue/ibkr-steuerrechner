@@ -127,32 +127,31 @@ class Report:
         self._unknown_lines.append(unknown_line)
 
     def get_years(self) -> list[str]:
-        years = sorted(self._years)
+        years = sorted(self._years, reverse=True)
         return years
 
-    def get_deposits(self, year: str):
-        year_int = int(year)
+    def has_data(self) -> bool:
+        return bool(self._years)
+
+    def get_deposits(self, year: int):
         return pd.DataFrame(columns=["date", "activity", "amount"],
                             data=((x.date, x.activity, float(x.amount))
                                   for x in self._deposits
-                                  if x.date.year == year_int))
+                                  if x.date.year == year))
 
-    def get_other_fees(self, year: str):
-        year_int = int(year)
+    def get_other_fees(self, year: int):
         return pd.DataFrame(columns=["date", "activity", "amount"],
                             data=((x.date, x.activity, float(x.amount))
                                   for x in self._other_fees
-                                  if x.date.year == year_int))
+                                  if x.date.year == year))
 
-    def get_interests(self, year: str):
-        year_int = int(year)
+    def get_interests(self, year: int):
         return pd.DataFrame(columns=["date", "activity", "amount"],
                             data=((x.date, x.activity, float(x.amount))
                                   for x in self._interests
-                                  if x.date.year == year_int))
+                                  if x.date.year == year))
 
-    def get_options(self, year: str, depot_position_type: DepotPositionType):
-        year_int = int(year)
+    def get_options(self, year: int, depot_position_type: DepotPositionType):
 
         def amount_or_zero(amount: Money | None):
             return amount.amount if amount else Decimal("0.00")
@@ -179,12 +178,11 @@ class Report:
         transaction_collections = (collection
                                    for option in self._options
                                    if option.position_type() == depot_position_type
-                                   for collection in option.transaction_collections(year_int))
+                                   for collection in option.transaction_collections(year))
         return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
                             data=option_line(transaction_collections))
 
-    def get_all_stocks(self, year: str):
-        year_int = int(year)
+    def get_all_stocks(self, year: int):
 
         def stock_line(transactions: Iterable[Transaction]):
             for transaction_no, transaction in enumerate(transactions):
@@ -198,12 +196,11 @@ class Report:
         transactions = (transaction
                         for stock in self._stocks
                         for transaction in stock.transactions
-                        if transaction.date.year == year_int)
+                        if transaction.date.year == year)
         return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount"],
                             data=stock_line(transactions))
 
-    def get_stocks(self, year: str):
-        year_int = int(year)
+    def get_stocks(self, year: int):
 
         def stock_line(transactions: Iterable[TransactionCollection]):
             for transaction_no, transaction in enumerate(transactions):
@@ -227,12 +224,11 @@ class Report:
         transaction_collections = (collection
                                    for stock in self._stocks
                                    if stock.position_type() == DepotPositionType.LONG  # Only long positions are supported
-                                   for collection in stock.transaction_collections(year_int))
+                                   for collection in stock.transaction_collections(year))
         return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
                             data=stock_line(transaction_collections))
 
-    def get_all_treasury_bills(self, year: str):
-        year_int = int(year)
+    def get_all_treasury_bills(self, year: int):
 
         def tbill_line(transactions: Iterable[Transaction]):
             for transaction_no, transaction in enumerate(transactions):
@@ -246,12 +242,11 @@ class Report:
         transactions = (transaction
                         for t_bill in self._treasury_bills
                         for transaction in t_bill.transactions
-                        if transaction.date.year == year_int)
+                        if transaction.date.year == year)
         return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount"],
                             data=tbill_line(transactions))
 
-    def get_treasury_bills(self, year: str):
-        year_int = int(year)
+    def get_treasury_bills(self, year: int):
 
         def tbill_line(transactions: Iterable[TransactionCollection]):
             for transaction_no, transaction in enumerate(transactions):
@@ -274,12 +269,11 @@ class Report:
 
         transaction_collections = (collection
                                    for t_bill in self._treasury_bills
-                                   for collection in t_bill.transaction_collections(year_int))
+                                   for collection in t_bill.transaction_collections(year))
         return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
                             data=tbill_line(transaction_collections))
 
-    def get_dividends(self, year: str):
-        year_int = int(year)
+    def get_dividends(self, year: int):
 
         def dividend_line(all_dividends: Iterable[Dividend]):
             all_dividends_by_date_action_id = sorted(all_dividends, key=lambda d: f'{d.date.isoformat()}/{d.action_id}')
@@ -298,20 +292,18 @@ class Report:
 
         dividends_in_year = (x
                              for x in self._dividends
-                             if x.date.year == year_int)
+                             if x.date.year == year)
         return pd.DataFrame(columns=["sequence", "no", "date", "report_date", "activity", "amount", "tax",
                                      "correction"],
                             data=dividend_line(dividends_in_year))
 
-    def get_forexes(self, year: str):
-        year_int = int(year)
+    def get_forexes(self, year: int):
         return pd.DataFrame(columns=["date", "activity", "amount"],
                             data=((x.date, x.activity, float(x.amount))
                                   for x in self._forexes
-                                  if x.date.year == year_int))
+                                  if x.date.year == year))
 
-    def get_foreign_currencies2(self, year: str, interest_bearing_account: bool):
-        year_int = int(year)
+    def get_foreign_currencies2(self, year: int, interest_bearing_account: bool):
 
         def currency_line(transactions: Iterable[TransactionCollection]):
             for transaction_no, transaction in enumerate(transactions):
@@ -346,7 +338,7 @@ class Report:
         result: dict[str, pd.DataFrame] = {}
         for currency in sorted(self._foreign_currency_accounts.keys()):
             account = self._foreign_currency_accounts[currency]
-            transaction_pairs = account.transaction_pairs(year_int)
+            transaction_pairs = account.transaction_pairs(year)
             if not interest_bearing_account:
                 transaction_pairs = apply_estg_23(transaction_pairs)
             df = pd.DataFrame(columns=["sequence",
@@ -366,12 +358,11 @@ class Report:
 
         return result
 
-    def get_unknown_lines(self, year: str):
-        year_int = int(year)
+    def get_unknown_lines(self, year: int):
         return pd.DataFrame(columns=["date", "activity", "amount"],
                             data=((x.date, x.activity, float(x.amount))
                                   for x in self._unknown_lines
-                                  if x.date.year == year_int))
+                                  if x.date.year == year))
 
     def process_statement(self, row: pd.Series):
         self.register_year(row["Date"])

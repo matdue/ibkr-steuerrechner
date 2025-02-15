@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from flex_query import DataError, read_statement_of_funds, read_trades, STATEMENT_OF_FUNDS_COLUMNS, TRADES_COLUMNS
+from page.utils import render_footer
 from report import Report
 
 
@@ -43,7 +44,6 @@ def create_report(data_files: list):
     return result
 
 
-st.set_page_config("IBKR Steuerrechner", layout="wide")
 st.title("Daten hochladen")
 
 # Do not use the whole width to display the introduction, use a smaller part to make it better readable
@@ -56,17 +56,20 @@ intro.write("""Alle hochgeladenen Daten werden auf einem Server in den USA verar
     Hauptspeicher des Servers abgelegt, sie werden weder dauerhaft noch zeitweise gespeichert. Sobald Sie das 
     Browserfenster schließen, werden die Daten aus dem Speicher entfernt.""")
 
-try:
-    uploads = intro.file_uploader("Kapitalflussrechnung+Trades (CSV-Format)", type="csv", accept_multiple_files=True)
-    report = create_report(uploads)
-    st.session_state["report"] = report
-except DataError as error:
-    intro.error(f"""Datei {error} scheint keine CSV-Datei mit der Kapitalflussrechnung und den Trades aus der Flex-Query
-    zu sein. Es wird eine CSV-Datei mit mindestens diesen Spalten erwartet: 
-    {", ".join(sorted(set(STATEMENT_OF_FUNDS_COLUMNS+TRADES_COLUMNS)))}""")
+uploads = intro.file_uploader("Kapitalflussrechnung+Trades (CSV-Format)", type="csv", accept_multiple_files=True)
+if uploads:
+    intro.write("Daten wurden hochgeladen, durch einen Klick können Sie die Auswertung starten.")
+    if intro.button("Auswertung starten", type="primary"):
+        try:
+            report = create_report(uploads)
+            st.session_state["report"] = report
+            if report.has_data():
+                st.switch_page("page/result/summary.py")
+            else:
+                intro.write("Die Dateien enthalten keine Daten. Haben Sie die richtigen Dateien hochgeladen?")
+        except DataError as error:
+            intro.error(f"""Datei {error} scheint keine CSV-Datei mit der Kapitalflussrechnung und den Trades aus der Flex-Query
+            zu sein. Es wird eine CSV-Datei mit mindestens diesen Spalten erwartet: 
+            {", ".join(sorted(set(STATEMENT_OF_FUNDS_COLUMNS+TRADES_COLUMNS)))}""")
 
-
-left, right = st.columns([2, 1])
-left.page_link("page/start/create_statement.py", label="Zurück", icon=":material/arrow_back:")
-if st.session_state.get("report", None) is not None:
-    right.page_link("page/start/report.py", label="Weiter", icon=":material/arrow_forward:")
+render_footer("page/start/create_statement.py", None)

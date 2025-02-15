@@ -1,6 +1,7 @@
 import streamlit as st
 
-st.set_page_config("IBKR Steuerrechner", layout="wide")
+from page.utils import render_footer
+
 st.title("Kontoauszüge erstellen und herunterladen")
 
 # Do not use the whole width to display the introduction, use a smaller part to make it better readable
@@ -93,6 +94,4 @@ intro.write("""
     7. Speichern Sie den Kontoauszug an einem sicheren Ort. Sie werden ihn im nächsten Jahr wieder benötigen, denn nur
     mit den Kontoauszügen aus allen Jahren liegt die komplette Historie vor.""")
 
-left, right = st.columns([2, 1])
-left.page_link("page/start/introduction.py", label="Zurück", icon=":material/arrow_back:")
-right.page_link("page/start/upload_data.py", label="Weiter", icon=":material/arrow_forward:")
+render_footer("page/start/introduction.py", "page/start/upload_data.py")

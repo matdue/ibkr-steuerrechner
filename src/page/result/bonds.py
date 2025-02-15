@@ -5,8 +5,8 @@ from i18n import format_currency
 from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
 
 
-def display_bonds(df: pd.DataFrame, df_all: pd.DataFrame):
-    st.header("Anleihen")
+def display_bonds(year: int, df: pd.DataFrame, df_all: pd.DataFrame):
+    st.title(f"Anleihen ({year})")
     st.write("""Gewinne und Verluste aus Käufen, Verkäufen und Ausbuchungen von Anleihen werden nach der
         FIFO-Methode berechnet und hier ausgewiesen. Käufe werden steuerlich erst dann relevant, wenn die
         Position durch Verkauf oder Ausbuchung geschlossen wird. Erfolgt die Schließung im Folgejahr, wird erst dann ein
@@ -29,4 +29,4 @@ def display_bonds(df: pd.DataFrame, df_all: pd.DataFrame):
 
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
-display_bonds(report.get_treasury_bills(selected_year), report.get_all_treasury_bills(selected_year))
+display_bonds(selected_year, report.get_treasury_bills(selected_year), report.get_all_treasury_bills(selected_year))

@@ -5,6 +5,16 @@ from i18n import format_date, format_currency, COLUMN_NAME
 from report import Report
 
 
+def render_footer(page_left: str | None, page_right: str | None):
+    st.write("")
+    st.write("")
+    left, right = st.columns([2, 1])
+    if page_left:
+        left.page_link(page_left, label="Zurück", icon=":material/arrow_back:")
+    if page_right:
+        right.page_link(page_right, label="Weiter", icon=":material/arrow_forward:")
+
+
 def ensure_report_is_available() -> Report:
     report = st.session_state.get("report", None)
     if report is None:
@@ -12,11 +22,11 @@ def ensure_report_is_available() -> Report:
     return report
 
 
-def ensure_selected_year():
+def ensure_selected_year() -> int:
     selected_year = st.session_state.get("selected_year", None)
     if selected_year is None:
-        st.switch_page("page/start/report.py")
-    return selected_year
+        st.switch_page("page/start/upload_data.py")
+    return int(selected_year)
 
 
 def display_dataframe(df: pd.DataFrame, date_columns: list[str], number_columns: list[str]):

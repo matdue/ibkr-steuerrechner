@@ -6,8 +6,8 @@ from i18n import format_currency
 from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
 
 
-def display_short_options(df: pd.DataFrame):
-    st.header("Stillhaltergeschäfte")
+def display_short_options(year: int, df: pd.DataFrame):
+    st.title(f"Stillhaltergeschäfte ({year})")
     st.write("""Gewinne und Verluste aus Stillhaltergeschäften werden nach der FIFO-Methode berechnet und hier 
         ausgewiesen. Stillhaltergeschäfte sind sofort steuerlich relevant (vgl. §20 Abs. 1 Nr. 11 EStG). 
         Der Sonderfall Barausgleich wird nicht berücksichtigt.""")
@@ -25,4 +25,4 @@ def display_short_options(df: pd.DataFrame):
 
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
-display_short_options(report.get_options(selected_year, DepotPositionType.SHORT))
+display_short_options(selected_year, report.get_options(selected_year, DepotPositionType.SHORT))

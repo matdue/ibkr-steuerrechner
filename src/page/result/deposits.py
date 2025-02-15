@@ -5,8 +5,8 @@ from i18n import format_currency
 from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
 
 
-def display_deposits(df: pd.DataFrame):
-    st.header("Ein- und Auszahlungen")
+def display_deposits(year: int, df: pd.DataFrame):
+    st.title(f"Ein- und Auszahlungen ({year})")
     st.write("""Alle Ein- und Auszahlen werden aufsummiert. Beide Summen dienen nur der Information und sind steuerlich
         nicht relevant.""")
     deposited_funds = df.query("amount >= 0")["amount"].sum()
@@ -20,4 +20,4 @@ def display_deposits(df: pd.DataFrame):
 
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
-display_deposits(report.get_deposits(selected_year))
+display_deposits(selected_year, report.get_deposits(selected_year))

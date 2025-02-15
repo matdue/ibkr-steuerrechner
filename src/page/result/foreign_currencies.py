@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import pandas as pd
 import streamlit as st
 
@@ -11,7 +13,7 @@ def display_foreign_currencies(buckets: dict[str, pd.DataFrame]):
         return
 
     for currency, df in buckets.items():
-        st.subheader(currency)
+        st.header(currency)
         currency_profits = df.query("profit >= 0")["profit"].sum()
         currency_losses = df.query("profit < 0")["profit"].sum()
         st.write(f"Gewinne: {format_currency(currency_profits)}")
@@ -21,7 +23,10 @@ def display_foreign_currencies(buckets: dict[str, pd.DataFrame]):
             display_dataframe(df, ["date"], ["profit"])
 
 
-st.header("Fremdwährungsgewinne")
+report = ensure_report_is_available()
+selected_year = ensure_selected_year()
+
+st.title(f"Fremdwährungsgewinne ({selected_year})")
 st.write("""Fremdwährungsgewinne können auf zwei Arten versteuert werden, abhängig vom Kontotyp: Auf verzinslichen 
     Fremdwährungskonten werden Gewinne und Verluste wie Kapitaleinkünfte versteuert, sie gehören in die Anlage KAP. 
     Die Konten von IBKR dürften dazu zählen. Auf unverzinslichen Fremdwährungskonten oder Zahlungsverkehrskonten werden 
@@ -65,17 +70,26 @@ with st.expander(f"Erläuterungen"):
         negatives Ergebnis haben. Der Betrag dürfte im Cent-Bereich liegen und sich über die Blöcke mehr oder 
         weniger ausgleichen.""")
 
-account_type = st.radio(
-    "Welcher Kontotyp soll für die Gewinnermittlung angenommen werden?",
-    ["Verzinsliches Fremdwährungskonto", "Unverzinsliches Fremdwährungskonto", "Zahlungsverkehrskonto"],
-    captions=[
-        "Kapitalerträge, vgl. §20 Abs. 2 S. 1 Nr. 7 EStG",
-        "Private Veräußerungsgeschäfte, vgl. §23 Abs. 1 Nr. 2 EStG",
-        "Private Veräußerungsgeschäfte, vgl. §23 Abs. 1 Nr. 2 EStG"
-    ]
-)
-interest_bearing_account = account_type == "Verzinsliches Fremdwährungskonto"
 
-report = ensure_report_is_available()
-selected_year = ensure_selected_year()
+@dataclass
+class AccountType:
+    code: int
+    title: str
+    caption: str
+
+
+account_options = [
+    AccountType(1, "Verzinsliches Fremdwährungskonto", "Kapitalerträge, vgl. §20 Abs. 2 S. 1 Nr. 7 EStG"),
+    AccountType(2, "Unverzinsliches Fremdwährungskonto", "Private Veräußerungsgeschäfte, vgl. §23 Abs. 1 Nr. 2 EStG"),
+    AccountType(3, "Zahlungsverkehrskonto", "Private Veräußerungsgeschäfte, vgl. §23 Abs. 1 Nr. 2 EStG")
+]
+account_type: AccountType = st.radio(
+    "Welcher Kontotyp soll für die Gewinnermittlung angenommen werden?",
+    account_options,
+    format_func=lambda acc_type: acc_type.title,
+    captions=[acc_type.caption for acc_type in account_options],
+    key="account_type"
+)
+interest_bearing_account = account_type.code == account_options[0].code
+
 display_foreign_currencies(report.get_foreign_currencies2(selected_year, interest_bearing_account))

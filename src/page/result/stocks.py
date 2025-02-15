@@ -5,8 +5,8 @@ from i18n import format_currency
 from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
 
 
-def display_stocks(df: pd.DataFrame, df_all: pd.DataFrame):
-    st.header("Aktiengeschäfte")
+def display_stocks(year: int, df: pd.DataFrame, df_all: pd.DataFrame):
+    st.title(f"Aktiengeschäfte ({year})")
     st.write("""Gewinne und Verluste aus Aktienkäufen, -verkäufen, -andienungen und -ausbuchungen werden nach der
         FIFO-Methode berechnet und hier ausgewiesen. Käufe und Andienungen werden steuerlich erst dann relevant, wenn die
         Position durch Verkauf oder Ausbuchung geschlossen wird. Erfolgt die Schließung im Folgejahr, wird erst dann ein
@@ -33,4 +33,4 @@ def display_stocks(df: pd.DataFrame, df_all: pd.DataFrame):
 
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
-display_stocks(report.get_stocks(selected_year), report.get_all_stocks(selected_year))
+display_stocks(selected_year, report.get_stocks(selected_year), report.get_all_stocks(selected_year))

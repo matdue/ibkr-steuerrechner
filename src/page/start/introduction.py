@@ -1,6 +1,7 @@
 import streamlit as st
 
-st.set_page_config("IBKR Steuerrechner", layout="wide")
+from page.utils import render_footer
+
 st.title("Steuerrechner für Interactive Brokers")
 
 # Do not use the whole width to display the introduction, use a smaller part to make it better readable
@@ -33,5 +34,4 @@ intro.write("""Alle Daten werden auf einem Server in den USA verarbeitet. Sie we
 intro.write("""Dieses Werkzeug ist Open Source, der Programmcode ist auf 
     [GitHub](https://github.com/matdue/ibkr-steuerrechner) zu finden.""")
 
-_, right = st.columns([2, 1])
-right.page_link("page/start/create_statement.py", label="Weiter", icon=":material/arrow_forward:")
+render_footer(None, "page/start/create_statement.py")

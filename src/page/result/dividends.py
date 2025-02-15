@@ -5,8 +5,8 @@ from i18n import format_currency
 from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
 
 
-def display_dividends(df: pd.DataFrame):
-    st.header("Dividenden")
+def display_dividends(year:int, df: pd.DataFrame):
+    st.title(f"Dividenden ({year})")
     st.write("""Die folgenden Zahlen stammen aus der Kapitalflussrechnung.
          Sie enthalten die Auszahlungen, die Quellensteuern, und die Korrekturbuchungen zur Quellensteuer.
          Allerdings wird nicht unterschieden zwischen Dividenden, Kapitalzuwachs und Return of Capital.
@@ -24,4 +24,4 @@ def display_dividends(df: pd.DataFrame):
 
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
-display_dividends(report.get_dividends(selected_year))
+display_dividends(selected_year, report.get_dividends(selected_year))

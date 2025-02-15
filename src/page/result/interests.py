@@ -5,8 +5,8 @@ from i18n import format_currency
 from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
 
 
-def display_interests(df: pd.DataFrame):
-    st.header("Zinsen")
+def display_interests(year: int, df: pd.DataFrame):
+    st.title(f"Zinsen ({year})")
     st.write("""Zinseinnahmen müssen versteuert werden (Abgeltungssteuer). Zinsausgaben können von Privatpersonen i.d.R.
         nicht angerechnet werden.""")
     earned_interests = df.query("amount >= 0")["amount"].sum()
@@ -21,4 +21,4 @@ def display_interests(df: pd.DataFrame):
 
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
-display_interests(report.get_interests(selected_year))
+display_interests(selected_year, report.get_interests(selected_year))
