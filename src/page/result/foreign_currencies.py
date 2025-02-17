@@ -79,9 +79,9 @@ class AccountType:
 
 
 account_options = [
-    AccountType(1, "Verzinsliches Fremdwährungskonto", "Kapitalerträge, vgl. §20 Abs. 2 S. 1 Nr. 7 EStG"),
-    AccountType(2, "Unverzinsliches Fremdwährungskonto", "Private Veräußerungsgeschäfte, vgl. §23 Abs. 1 Nr. 2 EStG"),
-    AccountType(3, "Zahlungsverkehrskonto", "Private Veräußerungsgeschäfte, vgl. §23 Abs. 1 Nr. 2 EStG")
+    AccountType(1, "Verzinsliches Fremdwährungskonto", "Kapitalerträge (vgl. §20 Abs. 2 S. 1 Nr. 7 EStG)"),
+    AccountType(2, "Unverzinsliches Fremdwährungskonto", "Private Veräußerungsgeschäfte (vgl. §23 Abs. 1 Nr. 2 EStG)"),
+    AccountType(3, "Zahlungsverkehrskonto", "Private Veräußerungsgeschäfte (vgl. §23 Abs. 1 Nr. 2 EStG)")
 ]
 account_type: AccountType = st.radio(
     "Welcher Kontotyp soll für die Gewinnermittlung angenommen werden?",
