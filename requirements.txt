@@ -1,5 +1,5 @@
-babel ~= 2.16.0
-numpy ~= 2.2.1
+babel ~= 2.17.0
+numpy ~= 2.2.3
 pandas ~= 2.2.3
-streamlit ~= 1.41.1
+streamlit ~= 1.42.0
 python-dateutil ~= 2.9.0.post0
