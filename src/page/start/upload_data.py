@@ -64,7 +64,7 @@ if uploads:
             report = create_report(uploads)
             st.session_state["report"] = report
             if report.has_data():
-                st.switch_page("page/result/summary.py")
+                st.switch_page("page/result/deposits.py")
             else:
                 intro.write("Die Dateien enthalten keine Daten. Haben Sie die richtigen Dateien hochgeladen?")
         except DataError as error:

@@ -12,7 +12,6 @@ def main():
         st.Page("page/start/upload_data.py", title="Daten hochladen")
     ]
     result_pages = [
-        st.Page("page/result/summary.py", title="Zusammenfassung"),
         st.Page("page/result/deposits.py", title="Ein- und Auszahlungen"),
         st.Page("page/result/interests.py", title="Zinsen"),
         st.Page("page/result/dividends.py", title="Dividenden"),
