@@ -1,5 +1,7 @@
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
+from io import BytesIO
 from itertools import groupby
 from typing import Iterable
 
@@ -19,6 +21,42 @@ from transaction import Transaction, BuySell, OpenCloseIndicator, AcquisitionTyp
 from transaction_collection import apply_estg_23, TransactionCollection
 from treasury_bill import TreasuryBill
 from unknown_line import UnknownLine
+
+
+@dataclass
+class Result:
+    year: int
+    df: pd.DataFrame
+
+    def total(self, column: str) -> float:
+        data = self.df[column]
+        return data.sum()
+
+    def total_positive(self, column: str) -> float:
+        data = self.df[column]
+        return data[data >= 0].sum()
+
+    def total_negative(self, column: str) -> float:
+        data = self.df[column]
+        return data[data < 0].sum()
+
+    def to_csv(self, columns: dict[str, str]) -> str:
+        df_export = self.df.filter(columns.keys()).rename(columns=columns)
+        csv = df_export.to_csv(index=False)
+        return csv
+
+    def to_excel(self, name: str, columns: dict[str, str], decimal_columns: list[str] = None) -> BytesIO:
+        df_export = self.df.filter(columns.keys())
+        if decimal_columns:
+            for decimal_column in decimal_columns:
+                # Convert decimals to float as to_excel of Pandas 2.2 exports decimals as strings
+                df_export[decimal_column] = df_export[decimal_column].astype(float)
+        df_export = df_export.rename(columns=columns)
+        excel_file = BytesIO()
+        with pd.ExcelWriter(excel_file) as writer:
+            df_export.to_excel(writer, index=False, sheet_name=name)
+        excel_file.seek(0)
+        return excel_file
 
 
 class Report:
@@ -133,38 +171,47 @@ class Report:
     def has_data(self) -> bool:
         return bool(self._years)
 
-    def get_deposits(self, year: int):
-        return pd.DataFrame(columns=["date", "activity", "amount"],
-                            data=((x.date, x.activity, float(x.amount))
-                                  for x in self._deposits
-                                  if x.date.year == year))
+    def get_deposits(self, year: int) -> Result:
+        df = pd.DataFrame(columns=["date", "activity", "amount"],
+                          data=((x.date, x.activity, round(x.amount.amount, 2))
+                                for x in self._deposits
+                                if x.date.year == year))
+        df.insert(0, "sequence", pd.Series(range(1, len(df)+1)))
+        result = Result(year, df)
+        return result
 
-    def get_other_fees(self, year: int):
-        return pd.DataFrame(columns=["date", "activity", "amount"],
-                            data=((x.date, x.activity, float(x.amount))
-                                  for x in self._other_fees
-                                  if x.date.year == year))
+    def get_other_fees(self, year: int) -> Result:
+        df = pd.DataFrame(columns=["date", "activity", "amount"],
+                          data=((x.date, x.activity, round(x.amount.amount, 2))
+                                for x in self._other_fees
+                                if x.date.year == year))
+        df.insert(0, "sequence", pd.Series(range(1, len(df)+1)))
+        result = Result(year, df)
+        return result
 
-    def get_interests(self, year: int):
-        return pd.DataFrame(columns=["date", "activity", "amount"],
-                            data=((x.date, x.activity, float(x.amount))
-                                  for x in self._interests
-                                  if x.date.year == year))
+    def get_interests(self, year: int) -> Result:
+        df = pd.DataFrame(columns=["date", "activity", "amount"],
+                          data=((x.date, x.activity, round(x.amount.amount, 2))
+                                for x in self._interests
+                                if x.date.year == year))
+        df.insert(0, "sequence", pd.Series(range(1, len(df)+1)))
+        result = Result(year, df)
+        return result
 
-    def get_options(self, year: int, depot_position_type: DepotPositionType):
+    def get_options(self, year: int, depot_position_type: DepotPositionType) -> Result:
 
         def amount_or_zero(amount: Money | None):
             return amount.amount if amount else Decimal("0.00")
 
         def option_line(transactions: Iterable[TransactionCollection]):
-            for transaction_no, transaction in enumerate(transactions):
+            for transaction_no, transaction in enumerate(transactions, 1):
                 for opening_transaction in transaction.get_opening_transactions():
                     yield (transaction_no,
                            opening_transaction.date,
                            opening_transaction.activity,
                            opening_transaction.trade_id,
                            opening_transaction.quantity,
-                           opening_transaction.amount.amount,
+                           round(opening_transaction.amount.amount, 2),
                            None)
                 closing_transaction = transaction.get_closing_transaction()
                 yield (transaction_no,
@@ -172,26 +219,28 @@ class Report:
                        closing_transaction.activity,
                        closing_transaction.trade_id,
                        closing_transaction.quantity,
-                       amount_or_zero(closing_transaction.amount),
-                       transaction.profit().amount)
+                       round(amount_or_zero(closing_transaction.amount), 2),
+                       round(transaction.profit().amount, 2))
 
         transaction_collections = (collection
                                    for option in self._options
                                    if option.position_type() == depot_position_type
                                    for collection in option.transaction_collections(year))
-        return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
-                            data=option_line(transaction_collections))
+        df = pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
+                          data=option_line(transaction_collections))
+        result = Result(year, df)
+        return result
 
     def get_all_stocks(self, year: int):
 
         def stock_line(transactions: Iterable[Transaction]):
-            for transaction_no, transaction in enumerate(transactions):
+            for transaction_no, transaction in enumerate(transactions, 1):
                 yield (transaction_no,
                        transaction.date,
                        transaction.activity,
                        transaction.trade_id,
                        transaction.quantity,
-                       float(transaction.amount.amount))
+                       round(transaction.amount.amount, 2))
 
         transactions = (transaction
                         for stock in self._stocks
@@ -200,17 +249,17 @@ class Report:
         return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount"],
                             data=stock_line(transactions))
 
-    def get_stocks(self, year: int):
+    def get_stocks(self, year: int) -> Result:
 
         def stock_line(transactions: Iterable[TransactionCollection]):
-            for transaction_no, transaction in enumerate(transactions):
+            for transaction_no, transaction in enumerate(transactions, 1):
                 for opening_transaction in transaction.get_opening_transactions():
                     yield (transaction_no,
                            opening_transaction.date,
                            opening_transaction.activity,
                            opening_transaction.trade_id,
                            opening_transaction.quantity,
-                           opening_transaction.amount.amount,
+                           round(opening_transaction.amount.amount, 2),
                            None)
                 closing_transaction = transaction.get_closing_transaction()
                 yield (transaction_no,
@@ -218,26 +267,28 @@ class Report:
                        closing_transaction.activity,
                        closing_transaction.trade_id,
                        closing_transaction.quantity,
-                       closing_transaction.amount.amount,
-                       transaction.profit().amount)
+                       round(closing_transaction.amount.amount, 2),
+                       round(transaction.profit().amount, 2))
 
         transaction_collections = (collection
                                    for stock in self._stocks
                                    if stock.position_type() == DepotPositionType.LONG  # Only long positions are supported
                                    for collection in stock.transaction_collections(year))
-        return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
-                            data=stock_line(transaction_collections))
+        df = pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
+                          data=stock_line(transaction_collections))
+        result = Result(year, df)
+        return result
 
     def get_all_treasury_bills(self, year: int):
 
         def tbill_line(transactions: Iterable[Transaction]):
-            for transaction_no, transaction in enumerate(transactions):
+            for transaction_no, transaction in enumerate(transactions, 1):
                 yield (transaction_no,
                        transaction.date,
                        transaction.activity,
                        transaction.trade_id,
                        transaction.quantity,
-                       float(transaction.amount.amount))
+                       round(transaction.amount.amount, 2))
 
         transactions = (transaction
                         for t_bill in self._treasury_bills
@@ -246,17 +297,17 @@ class Report:
         return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount"],
                             data=tbill_line(transactions))
 
-    def get_treasury_bills(self, year: int):
+    def get_treasury_bills(self, year: int) -> Result:
 
         def tbill_line(transactions: Iterable[TransactionCollection]):
-            for transaction_no, transaction in enumerate(transactions):
+            for transaction_no, transaction in enumerate(transactions, 1):
                 for opening_transaction in transaction.get_opening_transactions():
                     yield (transaction_no,
                            opening_transaction.date,
                            opening_transaction.activity,
                            opening_transaction.trade_id,
                            opening_transaction.quantity,
-                           opening_transaction.amount.amount,
+                           round(opening_transaction.amount.amount, 2),
                            None)
                 closing_transaction = transaction.get_closing_transaction()
                 yield (transaction_no,
@@ -264,49 +315,53 @@ class Report:
                        closing_transaction.activity,
                        closing_transaction.trade_id,
                        closing_transaction.quantity,
-                       closing_transaction.amount.amount,
-                       transaction.profit().amount)
+                       round(closing_transaction.amount.amount, 2),
+                       round(transaction.profit().amount, 2))
 
         transaction_collections = (collection
                                    for t_bill in self._treasury_bills
                                    for collection in t_bill.transaction_collections(year))
-        return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
-                            data=tbill_line(transaction_collections))
+        df = pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
+                          data=tbill_line(transaction_collections))
+        result = Result(year, df)
+        return result
 
-    def get_dividends(self, year: int):
+    def get_dividends(self, year: int) -> Result:
 
         def dividend_line(all_dividends: Iterable[Dividend]):
             all_dividends_by_date_action_id = sorted(all_dividends, key=lambda d: f'{d.date.isoformat()}/{d.action_id}')
-            for action_no, (action_id, dividends) in enumerate(groupby(all_dividends_by_date_action_id,
-                                                                       lambda d: d.action_id)):
-                for dividend_no, dividend in enumerate(dividends):
-                    line_no = f"{action_no+1}.{dividend_no+1}"
-                    yield (action_no,
-                           line_no,
+            for sequence, (action_id, dividends) in enumerate(groupby(all_dividends_by_date_action_id,
+                                                                      lambda d: d.action_id), 1):
+                for dividend in dividends:
+                    yield (sequence,
                            dividend.date,
                            dividend.report_date,
                            dividend.activity,
-                           float(dividend.amount.amount) if not dividend.is_tax else None,
-                           float(dividend.amount.amount) if dividend.is_tax else None,
+                           round(dividend.amount.amount, 2) if not dividend.is_tax else None,
+                           round(dividend.amount.amount, 2) if dividend.is_tax else None,
                            dividend.is_correction)
 
         dividends_in_year = (x
                              for x in self._dividends
                              if x.date.year == year)
-        return pd.DataFrame(columns=["sequence", "no", "date", "report_date", "activity", "amount", "tax",
-                                     "correction"],
-                            data=dividend_line(dividends_in_year))
+        df = pd.DataFrame(columns=["sequence", "date", "report_date", "activity", "amount", "tax", "correction"],
+                          data=dividend_line(dividends_in_year))
+        result = Result(year, df)
+        return result
 
-    def get_forexes(self, year: int):
-        return pd.DataFrame(columns=["date", "activity", "amount"],
-                            data=((x.date, x.activity, float(x.amount))
-                                  for x in self._forexes
-                                  if x.date.year == year))
+    def get_forexes(self, year: int) -> Result:
+        df = pd.DataFrame(columns=["date", "activity", "amount"],
+                          data=((x.date, x.activity, round(x.amount.amount, 2))
+                                for x in self._forexes
+                                if x.date.year == year))
+        df.insert(0, "sequence", pd.Series(range(1, len(df)+1)))
+        result = Result(year, df)
+        return result
 
-    def get_foreign_currencies2(self, year: int, interest_bearing_account: bool):
+    def get_foreign_currencies(self, year: int, interest_bearing_account: bool):
 
         def currency_line(transactions: Iterable[TransactionCollection]):
-            for transaction_no, transaction in enumerate(transactions):
+            for transaction_no, transaction in enumerate(transactions, 1):
                 profit = -transaction.profit()
                 for opening_txn_no, opening_transaction in enumerate(transaction.get_opening_transactions()):
                     if opening_txn_no == 0:
@@ -319,9 +374,9 @@ class Report:
                            opening_transaction.activity,
                            opening_transaction.trade_id,
                            opening_transaction.acquisition == AcquisitionType.GENUINE or interest_bearing_account,
-                           opening_transaction.amount_orig.amount,
+                           round(opening_transaction.amount_orig.amount, 2),
                            opening_transaction.fx_rate,
-                           opening_transaction.amount.amount.quantize(Decimal("1.00")),
+                           round(opening_transaction.amount.amount, 2),
                            None)
                 closing_transaction = transaction.get_closing_transaction()
                 yield (transaction_no,
@@ -330,39 +385,42 @@ class Report:
                        closing_transaction.activity,
                        closing_transaction.trade_id,
                        closing_transaction.acquisition == AcquisitionType.GENUINE or interest_bearing_account,
-                       closing_transaction.amount_orig.amount,
+                       round(closing_transaction.amount_orig.amount, 2),
                        closing_transaction.fx_rate,
-                       closing_transaction.amount.amount.quantize(Decimal("1.00")),
-                       profit.amount.quantize(Decimal("1.00")))
+                       round(closing_transaction.amount.amount, 2),
+                       round(profit.amount, 2))
 
-        result: dict[str, pd.DataFrame] = {}
+        result: dict[str, Result] = {}
         for currency in sorted(self._foreign_currency_accounts.keys()):
             account = self._foreign_currency_accounts[currency]
             transaction_pairs = account.transaction_pairs(year)
             if not interest_bearing_account:
                 transaction_pairs = apply_estg_23(transaction_pairs)
             df = pd.DataFrame(columns=["sequence",
-                                       "Fremdwährung",
+                                       "foreign_currency",
                                        "date",
-                                       "Aktivität",
-                                       "TradeID",
-                                       "Ergebnisrelevant",
+                                       "activity",
+                                       "trade_id",
+                                       "tax_relevant",
                                        currency,
-                                       "Devisenkurs",
+                                       "fx_rate",
                                        "EUR",
                                        "profit"],
                               data=currency_line(transaction_pairs))
 
             if not df.empty:
-                result[currency] = df
+                result[currency] = Result(year, df)
 
         return result
 
-    def get_unknown_lines(self, year: int):
-        return pd.DataFrame(columns=["date", "activity", "amount"],
-                            data=((x.date, x.activity, float(x.amount))
-                                  for x in self._unknown_lines
-                                  if x.date.year == year))
+    def get_unknown_lines(self, year: int) -> Result:
+        df = pd.DataFrame(columns=["date", "activity", "amount"],
+                          data=((x.date, x.activity, round(x.amount.amount, 2))
+                                for x in self._unknown_lines
+                                if x.date.year == year))
+        df.insert(0, "sequence", pd.Series(range(1, len(df)+1)))
+        result = Result(year, df)
+        return result
 
     def process_statement(self, row: pd.Series):
         self.register_year(row["Date"])

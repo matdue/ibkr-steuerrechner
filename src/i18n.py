@@ -20,6 +20,25 @@ COLUMN_NAME = {
     "trade_id": "Trade-ID",
     "activity_code": "Code",
     "quantity": "Anzahl",
+    "fx_rate": "Devisenkurs",
+    "tax_relevant": "Ergebnisrelevant",
+    "foreign_currency": "Fremdwährung",
+    "correction": "Korrektur"
+}
+
+COLUMN_NAME_EXPORT = {
+    "sequence": "Nr.",
+    "date": "Datum",
+    "activity": "Aktivität",
+    "amount": "Betrag (EUR)",
+    "report_date": "Datum (Kontoauszug)",
+    "tax": "Steuern (EUR)",
+    "trade_id": "Trade-ID",
+    "quantity": "Anzahl",
+    "profit": "Gewinn/Verlust (EUR)",
+    "fx_rate": "Devisenkurs",
+    "tax_relevant": "Ergebnisrelevant",
+    "foreign_currency": "Fremdwährung",
     "correction": "Korrektur"
 }
 
@@ -30,6 +49,12 @@ def format_currency(x, currency: str = "EUR") -> Optional[str]:
     if pd.isnull(x):
         return None
     return babel.numbers.format_currency(x, currency, locale=current_locale)
+
+
+def format_number(x) -> Optional[str]:
+    if pd.isnull(x):
+        return None
+    return babel.numbers.format_decimal(x, locale=current_locale, decimal_quantization=False)
 
 
 def format_date(x) -> Optional[str]:

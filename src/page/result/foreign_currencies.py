@@ -1,26 +1,51 @@
 from dataclasses import dataclass
 
-import pandas as pd
 import streamlit as st
 
-from i18n import format_currency
+from i18n import format_currency, COLUMN_NAME_EXPORT
 from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
+from report import Result
 
 
-def display_foreign_currencies(buckets: dict[str, pd.DataFrame]):
+@st.fragment
+def export_buttons(currency: str):
+    result: Result = st.session_state["report_result"][currency]
+    st.download_button("Download als CSV-Datei", st.session_state["csv_export"][currency],
+                       file_name=f"foreign_currency_{currency}_{result.year}.csv",
+                       mime="text/csv")
+    st.download_button("Download als Excel-Datei", st.session_state["excel_export"][currency],
+                       file_name=f"foreign_currency_{currency}_{result.year}.xlsx",
+                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+def display_foreign_currencies(buckets: dict[str, Result]):
     if len(buckets) == 0:
         st.write("Keine Daten für das gewählte Jahr vorhanden")
         return
 
-    for currency, df in buckets.items():
+    for currency, result in buckets.items():
         st.header(currency)
-        currency_profits = df.query("profit >= 0")["profit"].sum()
-        currency_losses = df.query("profit < 0")["profit"].sum()
+        currency_profits = result.total_positive("profit")
+        currency_losses = result.total_negative("profit")
         st.write(f"Gewinne: {format_currency(currency_profits)}")
         st.write(f"Verluste: {format_currency(currency_losses)}")
         st.write(f"Saldo: {format_currency(currency_profits + currency_losses)}")
         with st.expander("Berechnung"):
-            display_dataframe(df, ["date"], ["profit"])
+            display_dataframe(result.df, ["date"], {"profit": "EUR", currency: currency, "EUR": "EUR"},
+                              ["fx_rate"])
+        export_buttons(currency)
+
+
+def prepare_exports(buckets: dict[str, Result]):
+    csv_exports = {}
+    excel_exports = {}
+    for currency, result in buckets.items():
+        columns = {col: COLUMN_NAME_EXPORT.get(col, col) for col in result.df.columns}
+        csv_exports[currency] = result.to_csv(columns)
+        excel_exports[currency] = result.to_excel(f"Fremdwährung {currency} {result.year}", columns,
+                                                  [currency, "fx_rate", "EUR", "profit"])
+    st.session_state["csv_export"] = csv_exports
+    st.session_state["excel_export"] = excel_exports
 
 
 report = ensure_report_is_available()
@@ -92,4 +117,7 @@ account_type: AccountType = st.radio(
 )
 interest_bearing_account = account_type.code == account_options[0].code
 
-display_foreign_currencies(report.get_foreign_currencies2(selected_year, interest_bearing_account))
+report_result = report.get_foreign_currencies(selected_year, interest_bearing_account)
+st.session_state["report_result"] = report_result
+prepare_exports(report_result)
+display_foreign_currencies(report_result)
