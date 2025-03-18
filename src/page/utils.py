@@ -1,8 +1,8 @@
 import pandas as pd
 import streamlit as st
 
-from i18n import format_date, format_currency, COLUMN_NAME, format_number
-from report import Report
+from i18n import format_date, format_currency, COLUMN_NAME, format_number, COLUMN_NAME_EXPORT
+from report import Report, Result
 
 
 def render_footer(page_left: str | None, page_right: str | None):
@@ -57,3 +57,20 @@ def display_dataframe(df: pd.DataFrame,
                  hide_index=True,
                  column_config=column_config,
                  use_container_width=True)
+
+
+def display_export_buttons(result: Result, filename: str, excel_sheet_name: str, decimal_columns: list[str]):
+    columns = {col: COLUMN_NAME_EXPORT.get(col, col) for col in result.df.columns}
+    csv_data = result.to_csv(columns)
+    st.download_button("Download als CSV-Datei",
+                       csv_data,
+                       file_name=f"{filename}.csv",
+                       mime="text/csv",
+                       on_click="ignore")
+
+    excel_data = result.to_excel(excel_sheet_name, columns, decimal_columns)
+    st.download_button("Download als Excel-Datei",
+                       excel_data,
+                       file_name=f"{filename}.xlsx",
+                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                       on_click="ignore")

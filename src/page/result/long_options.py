@@ -1,20 +1,9 @@
 import streamlit as st
 
 from depot_position import DepotPositionType
-from i18n import format_currency, COLUMN_NAME_EXPORT
-from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
+from i18n import format_currency
+from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe, display_export_buttons
 from report import Result
-
-
-@st.fragment
-def export_buttons():
-    result: Result = st.session_state["report_result"]
-    st.download_button("Download als CSV-Datei", st.session_state["csv_export"],
-                       file_name=f"long_options_{result.year}.csv",
-                       mime="text/csv")
-    st.download_button("Download als Excel-Datei", st.session_state["excel_export"],
-                       file_name=f"long_options_{result.year}.xlsx",
-                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 def display_long_options(result: Result):
@@ -32,19 +21,12 @@ def display_long_options(result: Result):
         display_dataframe(result.df,
                           ["expiry", "date"],
                           {"profit": "EUR", "amount": "EUR"})
-    export_buttons()
-
-
-def prepare_exports(result: Result):
-    columns = {col: COLUMN_NAME_EXPORT[col] for col in result.df.columns}
-    st.session_state["csv_export"] = result.to_csv(columns)
-    st.session_state["excel_export"] = result.to_excel(f"Termingeschäfte {result.year}", columns,
-                                                       ["quantity", "amount", "profit"])
+    display_export_buttons(result, f"long_options_{result.year}", f"Termingeschäfte {result.year}",
+                           ["quantity", "amount", "profit"])
 
 
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
 report_result = report.get_options(selected_year, DepotPositionType.LONG)
 st.session_state["report_result"] = report_result
-prepare_exports(report_result)
 display_long_options(report_result)

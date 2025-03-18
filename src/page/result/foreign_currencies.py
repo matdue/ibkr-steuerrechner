@@ -2,20 +2,9 @@ from dataclasses import dataclass
 
 import streamlit as st
 
-from i18n import format_currency, COLUMN_NAME_EXPORT
-from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe
+from i18n import format_currency
+from page.utils import ensure_report_is_available, ensure_selected_year, display_dataframe, display_export_buttons
 from report import Result
-
-
-@st.fragment
-def export_buttons(currency: str):
-    result: Result = st.session_state["report_result"][currency]
-    st.download_button("Download als CSV-Datei", st.session_state["csv_export"][currency],
-                       file_name=f"foreign_currency_{currency}_{result.year}.csv",
-                       mime="text/csv")
-    st.download_button("Download als Excel-Datei", st.session_state["excel_export"][currency],
-                       file_name=f"foreign_currency_{currency}_{result.year}.xlsx",
-                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 def display_foreign_currencies(buckets: dict[str, Result]):
@@ -33,19 +22,8 @@ def display_foreign_currencies(buckets: dict[str, Result]):
         with st.expander("Berechnung"):
             display_dataframe(result.df, ["date"], {"profit": "EUR", currency: currency, "EUR": "EUR"},
                               ["fx_rate"])
-        export_buttons(currency)
-
-
-def prepare_exports(buckets: dict[str, Result]):
-    csv_exports = {}
-    excel_exports = {}
-    for currency, result in buckets.items():
-        columns = {col: COLUMN_NAME_EXPORT.get(col, col) for col in result.df.columns}
-        csv_exports[currency] = result.to_csv(columns)
-        excel_exports[currency] = result.to_excel(f"Fremdwährung {currency} {result.year}", columns,
-                                                  [currency, "fx_rate", "EUR", "profit"])
-    st.session_state["csv_export"] = csv_exports
-    st.session_state["excel_export"] = excel_exports
+        display_export_buttons(result, f"foreign_currency_{currency}_{result.year}",
+                               f"Fremdwährung {currency} {result.year}", [currency, "fx_rate", "EUR", "profit"])
 
 
 report = ensure_report_is_available()
@@ -119,5 +97,4 @@ interest_bearing_account = account_type.code == account_options[0].code
 
 report_result = report.get_foreign_currencies(selected_year, interest_bearing_account)
 st.session_state["report_result"] = report_result
-prepare_exports(report_result)
 display_foreign_currencies(report_result)
