@@ -272,7 +272,6 @@ class Report:
 
         transaction_collections = (collection
                                    for stock in self._stocks
-                                   if stock.position_type() == DepotPositionType.LONG  # Only long positions are supported
                                    for collection in stock.transaction_collections(year))
         df = pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
                           data=stock_line(transaction_collections))
@@ -428,7 +427,7 @@ class Report:
             case "DEP" | "WITH":
                 self.add_deposit(row)
 
-            case "SELL" | "BUY" | "ASSIGN":
+            case "SELL" | "BUY" | "ASSIGN" | "EXE":
                 # Processed in process_trade(), registering the foreign currency only
                 match row["AssetClass"]:
                     case "BILL":

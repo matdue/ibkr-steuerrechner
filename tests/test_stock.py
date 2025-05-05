@@ -188,6 +188,38 @@ class StockTests(unittest.TestCase):
             )
         ], result._stocks)
 
+    def test_execute_assign(self):
+        result = read_report("resources/stock/execute_assign.csv")
+
+        self.assertEqual(1, len(result._stocks))
+        self.assertEqual([
+            Stock(
+                "SPY",
+                "STK",
+                [
+                    Transaction("993694321",
+                                date.fromisoformat("20250404"),
+                                "Sell -100 SPDR S&P 500 ETF TRUST (Exercise)",
+                                BuySell.SELL,
+                                OpenCloseIndicator.OPEN,
+                                Decimal(-100),
+                                Money(Decimal("48593.8038339"), "EUR"),
+                                Money(Decimal("52998.51"), "USD"),
+                                Decimal("0.91689")),
+                    Transaction("993711225",
+                                date.fromisoformat("20250404"),
+                                "Buy 100 SPDR S&P 500 ETF TRUST (Assignment)",
+                                BuySell.BUY,
+                                OpenCloseIndicator.CLOSE,
+                                Decimal(100),
+                                Money(Decimal("-49970.505"), "EUR"),
+                                Money(Decimal("-54500"), "USD"),
+                                Decimal("0.91689"))
+                ],
+                True
+            )
+        ], result._stocks)
+
     def test_profit_buy_long_unclosed(self):
         trade = Stock("GAB PRK", "STK")
         trade.add_transaction(Transaction("1101770",

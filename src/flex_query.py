@@ -12,11 +12,13 @@ class DataError(Exception):
 
 
 DATE_COLUMNS = ["Expiry", "ReportDate", "Date", "TradeDate"]
+STATEMENT_OF_FUNDS_SECTION_CODE = "STFU"
 STATEMENT_OF_FUNDS_COLUMNS = \
     ["CurrencyPrimary", "FXRateToBase", "AssetClass", "Symbol", "Buy/Sell",
      "Description", "Strike", "Expiry", "Put/Call", "ReportDate", "Date", "ActivityCode",
      "ActivityDescription", "TradeID", "OrderID", "TradeQuantity", "TradePrice", "TradeGross",
      "TradeCommission", "TradeTax", "Amount", "LevelOfDetail", "TransactionID", "ActionID"]
+TRADES_COLUMNS_SECTION_CODE = "TRNT"
 TRADES_COLUMNS = \
     ["AssetClass", "Symbol", "TradeID", "Open/CloseIndicator", "Buy/Sell", "Quantity", "TradeDate"]
 
@@ -28,31 +30,16 @@ def decimal_from_value(value: str):
     return Decimal(trimmed_value)
 
 
-def all_lambda(iterable, function):
-    return all(function(i) for i in iterable)
-
-
-def any_lambda(iterable, function):
-    return any(function(i) for i in iterable)
-
-
-def csv_part(all_lines: Iterator[str], required_columns: list[str], other_columns: list[list[str]]):
-    possible_headers = other_columns + [required_columns]
-    required_header_passed = False
+def csv_part(all_lines: Iterator[str], section_code: str):
+    header_line = f"\"HEADER\",\"{section_code}\","
+    data_line = f"\"DATA\",\"{section_code}\","
     for line in all_lines:
-        # Is this line a header line?
-        if any_lambda(possible_headers, lambda headers: all_lambda(headers, lambda c: f"\"{c}\"" in line)):
-            # Header line found => start of the next part
-            required_header_passed = False
-            if all_lambda(required_columns, lambda c: f"\"{c}\"" in line):
-                # Required header found
-                required_header_passed = True
-        if required_header_passed:
+        if line.startswith(data_line) or line.startswith(header_line):
             yield line
 
 
-def read_csv_part(filebuf, required_columns: list[str], other_columns: list[list[str]]):
-    df = pd.read_csv(IterableTextIO(csv_part(filebuf, required_columns, other_columns)),
+def read_csv_part(filebuf, section_code: str, required_columns: list[str]):
+    df = pd.read_csv(IterableTextIO(csv_part(filebuf, section_code)),
                      usecols=required_columns,
                      parse_dates=[col
                                   for col in DATE_COLUMNS
@@ -92,7 +79,7 @@ def convert_dates(df: pd.DataFrame):
 
 def read_statement_of_funds(filename: str, filebuf):
     try:
-        df = read_csv_part(filebuf, STATEMENT_OF_FUNDS_COLUMNS, [TRADES_COLUMNS])
+        df = read_csv_part(filebuf, STATEMENT_OF_FUNDS_SECTION_CODE, STATEMENT_OF_FUNDS_COLUMNS)
         convert_dates(df)
 
         # Base currency must be EUR because we are going to calculate German taxes which must be in EUR
@@ -127,7 +114,7 @@ def read_statement_of_funds(filename: str, filebuf):
 
 def read_trades(filename: str, filebuf):
     try:
-        df = read_csv_part(filebuf, TRADES_COLUMNS, [STATEMENT_OF_FUNDS_COLUMNS])
+        df = read_csv_part(filebuf, TRADES_COLUMNS_SECTION_CODE, TRADES_COLUMNS)
         convert_dates(df)
         df.sort_values(by="TradeDate", kind="stable", inplace=True)
         return df

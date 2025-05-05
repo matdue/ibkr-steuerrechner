@@ -37,9 +37,12 @@ class DepotPosition:
             return DepotPositionType.SHORT
 
     def transaction_collections(self, year: int) -> list[TransactionCollection]:
-        if self.position_type() == DepotPositionType.SHORT:
-            return to_single_transactions(self.transactions, year)
-        elif self.position_type() == DepotPositionType.LONG:
-            return to_opening_closing_pairs(self.transactions, year)
-        else:
-            return []
+        match self.asset_class:
+            case "STK" | "BILL":
+                return to_opening_closing_pairs(self.transactions, year)
+            case "OPT":
+                if self.position_type() == DepotPositionType.SHORT:
+                    return to_single_transactions(self.transactions, year)
+                elif self.position_type() == DepotPositionType.LONG:
+                    return to_opening_closing_pairs(self.transactions, year)
+        return []
