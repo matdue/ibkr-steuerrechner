@@ -28,5 +28,4 @@ def display_short_options(result: Result):
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
 report_result = report.get_options(selected_year, DepotPositionType.SHORT)
-st.session_state["report_result"] = report_result
 display_short_options(report_result)

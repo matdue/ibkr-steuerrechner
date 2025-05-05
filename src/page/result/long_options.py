@@ -28,5 +28,4 @@ def display_long_options(result: Result):
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
 report_result = report.get_options(selected_year, DepotPositionType.LONG)
-st.session_state["report_result"] = report_result
 display_long_options(report_result)

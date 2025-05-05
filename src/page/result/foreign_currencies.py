@@ -96,5 +96,4 @@ account_type: AccountType = st.radio(
 interest_bearing_account = account_type.code == account_options[0].code
 
 report_result = report.get_foreign_currencies(selected_year, interest_bearing_account)
-st.session_state["report_result"] = report_result
 display_foreign_currencies(report_result)

@@ -22,5 +22,4 @@ def display_interests(result: Result):
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
 report_result = report.get_interests(selected_year)
-st.session_state["report_result"] = report_result
 display_interests(report_result)

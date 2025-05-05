@@ -37,5 +37,4 @@ def display_stocks(result: Result, df_all: pd.DataFrame):
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
 report_result = report.get_stocks(selected_year)
-st.session_state["report_result"] = report_result
 display_stocks(report_result, report.get_all_stocks(selected_year))
