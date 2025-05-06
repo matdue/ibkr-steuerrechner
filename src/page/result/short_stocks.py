@@ -12,11 +12,13 @@ def display_short_stocks(result: Result, df_all: pd.DataFrame):
     st.write("""Gewinne und Verluste aus Aktienleerverkäufen sowie Aktienandienungen und -ausbuchungen (in der 
         Reihenfolge Ausbuchung mit anschließender Andienung) werden nach der FIFO-Methode berechnet und hier 
         ausgewiesen.""")
+    st.write("""An dieser Stelle werden auch ETFs aufgelistet, obwohl sie keine Aktien sind, sondern Sammelanlagen.
+        Allerdings haben Sammelanlagen einen anderen Verlusttopf. Eine manuelle Aufteilung ist ggf. notwendig.""")
     profitable_trades = result.total_positive("profit")
     lossy_trades = result.total_negative("profit")
     sum_trades = profitable_trades + lossy_trades
-    st.write(f"Gewinne aus Aktienveräußerungen: {format_currency(profitable_trades)}")
-    st.write(f"Verluste aus Aktienveräußerungen: {format_currency(abs(lossy_trades))}")
+    st.write(f"Gewinne aus Aktienleerverkäufen: {format_currency(profitable_trades)}")
+    st.write(f"Verluste aus Aktienleerverkäufen: {format_currency(abs(lossy_trades))}")
     st.write(f"Saldo: {format_currency(sum_trades)}")
     with st.expander(f"Kapitalflussrechnung (nur abgeschlossene Aktienleerverkäufe)", True):
         display_dataframe(result.df,

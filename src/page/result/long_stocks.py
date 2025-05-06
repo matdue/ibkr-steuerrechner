@@ -13,6 +13,8 @@ def display_long_stocks(result: Result, df_all: pd.DataFrame):
         FIFO-Methode berechnet und hier ausgewiesen. Käufe und Andienungen werden steuerlich erst dann relevant, wenn die
         Position durch Verkauf oder Ausbuchung geschlossen wird. Erfolgt die Schließung im Folgejahr, wird erst dann ein
         Gewinn oder Verlust berechnet.""")
+    st.write("""An dieser Stelle werden auch ETFs aufgelistet, obwohl sie keine Aktien sind, sondern Sammelanlagen.
+        Allerdings haben Sammelanlagen einen anderen Verlusttopf. Eine manuelle Aufteilung ist ggf. notwendig.""")
     profitable_trades = result.total_positive("profit")
     lossy_trades = result.total_negative("profit")
     sum_trades = profitable_trades + lossy_trades
