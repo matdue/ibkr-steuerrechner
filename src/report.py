@@ -249,7 +249,7 @@ class Report:
         return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount"],
                             data=stock_line(transactions))
 
-    def get_stocks(self, year: int) -> Result:
+    def get_stocks(self, year: int, depot_position_type: DepotPositionType) -> Result:
 
         def stock_line(transactions: Iterable[TransactionCollection]):
             for transaction_no, transaction in enumerate(transactions, 1):
@@ -272,6 +272,7 @@ class Report:
 
         transaction_collections = (collection
                                    for stock in self._stocks
+                                   if stock.position_type() == depot_position_type
                                    for collection in stock.transaction_collections(year))
         df = pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
                           data=stock_line(transaction_collections))
