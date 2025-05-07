@@ -71,7 +71,7 @@ with intro.expander("Flex-Query erstellen"):
     st.image("resources/page/start/fq_create_08.png")
     st.write("""
         9. Nach Bestätigung durch Speichern scrollen Sie weiter herunter und stellen Sie in der Zustellkonfiguration 
-        das Format auf CSV um""")
+        das Format auf CSV um. Einbeziehung des Abschnittscodes und der Zeilenbeschriftung muss eingeschaltet werden""")
     st.image("resources/page/start/fq_create_09.png")
     st.write("""
         10. Abschließend ist die Allgemeine Konfiguration zu prüfen und ggf. zu korrigieren""")
