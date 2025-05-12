@@ -621,6 +621,76 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(Money(Decimal("-0.18"), "EUR"), estg23_transaction_pairs[7].profit())
         self.assertEqual(Money(Decimal("88.65"), "EUR"), estg23_transaction_pairs[8].profit())
 
+    def test_example_usd(self):
+        account = ForeignCurrencyAccount("USD")
+        account.add_transaction(Transaction("U2300002",
+                                            datetime.date.fromisoformat("20230101"),
+                                            None,
+                                            BuySell.BUY,
+                                            OpenCloseIndicator.OPEN,
+                                            Decimal("579.28"),
+                                            Money(Decimal("544.79"), "EUR"),
+                                            Money(Decimal("579.28"), "USD"),
+                                            Decimal("0.9405"),
+                                            AcquisitionType.NON_GENUINE))
+        account.add_transaction(Transaction("U2300004",
+                                            datetime.date.fromisoformat("20230106"),
+                                            None,
+                                            BuySell.SELL,
+                                            OpenCloseIndicator.CLOSE,
+                                            Decimal("-55.50"),
+                                            Money(Decimal("-52.14"), "EUR"),
+                                            Money(Decimal("-55.50"), "USD"),
+                                            Decimal("0.9395"),
+                                            AcquisitionType.GENUINE))
+        account.add_transaction(Transaction("U2300005",
+                                            datetime.date.fromisoformat("20230123"),
+                                            None,
+                                            BuySell.SELL,
+                                            OpenCloseIndicator.CLOSE,
+                                            Decimal("-273.50"),
+                                            Money(Decimal("-251.59"), "EUR"),
+                                            Money(Decimal("-273.50"), "USD"),
+                                            Decimal("0.9199"),
+                                            AcquisitionType.GENUINE))
+        account.add_transaction(Transaction("U2300006",
+                                            datetime.date.fromisoformat("20230123"),
+                                            None,
+                                            BuySell.SELL,
+                                            OpenCloseIndicator.CLOSE,
+                                            Decimal("-250.28"),
+                                            Money(Decimal("-230.23"), "EUR"),
+                                            Money(Decimal("-250.28"), "USD"),
+                                            Decimal("0.9199"),
+                                            AcquisitionType.GENUINE))
+        account.add_transaction(Transaction("T2300174",
+                                            datetime.date.fromisoformat("20230113"),
+                                            None,
+                                            BuySell.BUY,
+                                            OpenCloseIndicator.OPEN,
+                                            Decimal("253.50"),
+                                            Money(Decimal("234.01"), "EUR"),
+                                            Money(Decimal("253.50"), "USD"),
+                                            Decimal("0.9231"),
+                                            AcquisitionType.NON_GENUINE))
+        account.add_transaction(Transaction("U2300007",
+                                            datetime.date.fromisoformat("20230123"),
+                                            None,
+                                            BuySell.SELL,
+                                            OpenCloseIndicator.CLOSE,
+                                            Decimal("-253.50"),
+                                            Money(Decimal("-233.19"), "EUR"),
+                                            Money(Decimal("-253.50"), "USD"),
+                                            Decimal("0.9199"),
+                                            AcquisitionType.GENUINE))
+
+        transaction_pairs = account.transaction_pairs(2023)
+        self.assertEqual(4, len(transaction_pairs))
+        self.assertEqual(Money(Decimal("-0.06"), "EUR"), -transaction_pairs[0].profit())
+        self.assertEqual(Money(Decimal("-5.64"), "EUR"), -transaction_pairs[1].profit())
+        self.assertEqual(Money(Decimal("-5.13"), "EUR"), -transaction_pairs[2].profit())
+        self.assertEqual(Money(Decimal("-0.82"), "EUR"), -transaction_pairs[3].profit())
+
 
 if __name__ == '__main__':
     unittest.main()
