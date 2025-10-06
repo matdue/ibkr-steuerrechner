@@ -56,7 +56,7 @@ def display_dataframe(df: pd.DataFrame,
     st.dataframe(df.style.apply(alternate_background, axis=1).format(formats),
                  hide_index=True,
                  column_config=column_config,
-                 use_container_width=True)
+                 width="stretch")
 
 
 def display_export_buttons(result: Result, filename: str, excel_sheet_name: str, decimal_columns: list[str]):
