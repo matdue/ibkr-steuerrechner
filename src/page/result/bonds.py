@@ -32,4 +32,4 @@ def display_bonds(result: Result, df_all: pd.DataFrame):
 report = ensure_report_is_available()
 selected_year = ensure_selected_year()
 report_result = report.get_treasury_bills(selected_year)
-display_bonds(report_result, report.get_all_stocks(selected_year))
+display_bonds(report_result, report.get_all_treasury_bills(selected_year))
