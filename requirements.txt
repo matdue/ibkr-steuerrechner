@@ -1,6 +1,6 @@
 babel ~= 2.17.0
-numpy ~= 2.3.3
+numpy ~= 2.3.4
 pandas ~= 2.3.3
-streamlit ~= 1.50.0
+streamlit ~= 1.51.0
 python-dateutil ~= 2.9.0.post0
 XlsxWriter ~= 3.2.9
