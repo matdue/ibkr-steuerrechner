@@ -124,6 +124,7 @@ class Report:
             row["FXRateToBase_orig"]
         )
         depot_position.add_transaction(maturity_transaction)
+        self.add_foreign_currency_flow(row, True)
 
     def add_foreign_currency_flow(self, row: pd.Series, taxable: bool):
         foreign_currency_code = row["CurrencyPrimary_orig"]
