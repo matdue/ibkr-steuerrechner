@@ -457,37 +457,37 @@ class Report:
             case _:
                 self.add_unknown_line(row)
 
-    def _find_stock_position(self, symbol: str, asset_class: str) -> Stock | None:
+    def _find_stock_position(self, symbol: str, con_id: str, asset_class: str) -> Stock | None:
         depot_position = next((stock
                                for stock in self._stocks
-                               if stock.symbol == symbol and not stock.closed),
+                               if stock.con_id == con_id and not stock.closed),
                               None)
         if depot_position is None:
-            new_stock = Stock(symbol, asset_class)
+            new_stock = Stock(symbol, con_id, asset_class)
             self._stocks.append(new_stock)
             depot_position = new_stock
 
         return depot_position
 
-    def _find_option_position(self, symbol: str, asset_class: str) -> Option | None:
+    def _find_option_position(self, symbol: str, con_id: str, asset_class: str) -> Option | None:
         depot_position = next((option
                                for option in self._options
-                               if option.symbol == symbol and not option.closed),
+                               if option.con_id == con_id and not option.closed),
                               None)
         if depot_position is None:
-            new_option = Option(symbol, asset_class)
+            new_option = Option(symbol, con_id, asset_class)
             self._options.append(new_option)
             depot_position = new_option
 
         return depot_position
 
-    def _find_treasury_bill_position(self, symbol: str, asset_class: str) -> TreasuryBill | None:
+    def _find_treasury_bill_position(self, symbol: str, con_id: str, asset_class: str) -> TreasuryBill | None:
         depot_position = next((t_bill
                                for t_bill in self._treasury_bills
-                               if t_bill.symbol == symbol and not t_bill.closed),
+                               if t_bill.con_id == con_id and not t_bill.closed),
                               None)
         if depot_position is None:
-            new_t_bill = TreasuryBill(symbol, asset_class)
+            new_t_bill = TreasuryBill(symbol, con_id, asset_class)
             self._treasury_bills.append(new_t_bill)
             depot_position = new_t_bill
 
@@ -499,19 +499,20 @@ class Report:
         if asset_class not in ["STK", "OPT", "BILL", "CASH"]:
             raise NotImplementedError()
         symbol = row["Symbol"]
+        con_id = row["Conid"]
         trade_id = row["TradeID"]
         buy_sell = row["Buy/Sell"]
 
         depot_position: DepotPosition | None = None
         match asset_class:
             case "STK":
-                depot_position = self._find_stock_position(symbol, asset_class)
+                depot_position = self._find_stock_position(symbol, con_id, asset_class)
 
             case "OPT":
-                depot_position = self._find_option_position(symbol, asset_class)
+                depot_position = self._find_option_position(symbol, con_id, asset_class)
 
             case "BILL":
-                depot_position = self._find_treasury_bill_position(symbol, asset_class)
+                depot_position = self._find_treasury_bill_position(symbol, con_id, asset_class)
 
             case "CASH":
                 # Handle cash trades in process_statement()
@@ -543,3 +544,34 @@ class Report:
                 Money(row["Amount_orig"], row["CurrencyPrimary_orig"]),
                 row["FXRateToBase_orig"]
             ))
+
+    def process_corporate_action(self, row: pd.Series):
+        asset_class = row["AssetClass"]
+        if asset_class not in ["OPT", "BILL"]:
+            raise NotImplementedError()
+        type = row["Type"]
+        if type not in ["TM", "FS"]:
+            raise NotImplementedError()
+        symbol = row["Symbol"]
+        con_id = row["Conid"]
+
+        depot_position: DepotPosition | None = None
+        match asset_class:
+            case "OPT":
+                depot_position = self._find_option_position(symbol, con_id, asset_class)
+
+            case "BILL":
+                # Handle bill corporate actions in process_trade()
+                return
+
+        depot_position.add_transaction(Transaction(
+            None,
+            row["Date/Time"],
+            row["Description"],
+            None,
+            None,
+            row["Quantity"],
+            None,
+            None,
+            None
+        ))

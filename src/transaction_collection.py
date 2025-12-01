@@ -81,6 +81,8 @@ class TransactionPair(TransactionCollection):
     opening_transactions: list[TaxableTransaction] = dataclasses.field(default_factory=list)
 
     def profit(self) -> Money:
+        if len(self.opening_transactions) == 0 and self.closing_transaction.amount is not None:
+            return self.closing_transaction.amount
         opening_amount = reduce(operator.add, (txn.amount for txn in self.opening_transactions))
         if self.closing_transaction.amount is None:
             return opening_amount

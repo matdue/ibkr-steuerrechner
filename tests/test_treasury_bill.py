@@ -16,6 +16,7 @@ class TreasuryBillTests(unittest.TestCase):
         self.assertEqual([
             TreasuryBill(
                 "912797HR1",
+                "667447053",
                 "BILL",
                 [
                     Transaction("0959089",
@@ -39,6 +40,7 @@ class TreasuryBillTests(unittest.TestCase):
         self.assertEqual([
             TreasuryBill(
                 "912797HR1",
+                "667447053",
                 "BILL",
                 [
                     Transaction("0959089",
@@ -65,7 +67,7 @@ class TreasuryBillTests(unittest.TestCase):
         ], result._treasury_bills)
 
     def test_profit_buy_long_unclosed(self):
-        t_bill = TreasuryBill("912797HR1", "BILL")
+        t_bill = TreasuryBill("912797HR1", "ConID", "BILL")
         t_bill.add_transaction(Transaction("0959089",
                                            date.fromisoformat("20231122"),
                                            "Buy 5,000 B 05/23/24 ",
@@ -80,7 +82,7 @@ class TreasuryBillTests(unittest.TestCase):
         self.assertEqual(0, len(transaction_collections))
 
     def test_profit_buy_long_close(self):
-        t_bill = TreasuryBill("912797HR1", "BILL")
+        t_bill = TreasuryBill("912797HR1", "ConID", "BILL")
         t_bill.add_transaction(Transaction("0959089",
                                            date.fromisoformat("20231122"),
                                            "Buy 5,000 B 05/23/24 ",

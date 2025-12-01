@@ -10,11 +10,11 @@ from transaction_collection import TaxableTransaction
 
 class DepotPositionTests(unittest.TestCase):
     def test_no_transactions_should_be_of_none_type(self):
-        depot_position = DepotPosition("XXX", "STK")
+        depot_position = DepotPosition("XXX", "ConID", "STK")
         self.assertEqual(None, depot_position.position_type())
 
     def test_initial_txn_open_buy_should_be_of_type_long(self):
-        depot_position = DepotPosition("XXX", "STK")
+        depot_position = DepotPosition("XXX", "ConID", "STK")
         depot_position.add_transaction(Transaction(None,
                                                    datetime.date(2024, 12, 24),
                                                    None,
@@ -28,7 +28,7 @@ class DepotPositionTests(unittest.TestCase):
         self.assertEqual(DepotPositionType.LONG, depot_position.position_type())
 
     def test_initial_txn_open_sell_should_be_of_type_short(self):
-        depot_position = DepotPosition("XXX", "STK")
+        depot_position = DepotPosition("XXX", "ConID", "STK")
         depot_position.add_transaction(Transaction(None,
                                                    datetime.date(2024, 12, 24),
                                                    None,
@@ -42,7 +42,7 @@ class DepotPositionTests(unittest.TestCase):
         self.assertEqual(DepotPositionType.SHORT, depot_position.position_type())
 
     def test_initial_txn_close_buy_should_be_of_type_short(self):
-        depot_position = DepotPosition("XXX", "STK")
+        depot_position = DepotPosition("XXX", "ConID", "STK")
         depot_position.add_transaction(Transaction(None,
                                                    datetime.date(2024, 12, 24),
                                                    None,
@@ -56,7 +56,7 @@ class DepotPositionTests(unittest.TestCase):
         self.assertEqual(DepotPositionType.SHORT, depot_position.position_type())
 
     def test_initial_txn_close_sell_should_be_of_type_long(self):
-        depot_position = DepotPosition("XXX", "STK")
+        depot_position = DepotPosition("XXX", "ConID", "STK")
         depot_position.add_transaction(Transaction(None,
                                                    datetime.date(2024, 12, 24),
                                                    None,
@@ -70,7 +70,7 @@ class DepotPositionTests(unittest.TestCase):
         self.assertEqual(DepotPositionType.LONG, depot_position.position_type())
 
     def test_type_long_with_open_txn_should_have_no_transaction_collections(self):
-        depot_position = DepotPosition("XXX", "STK")
+        depot_position = DepotPosition("XXX", "ConID", "STK")
         depot_position.add_transaction(Transaction(None,
                                                    datetime.date(2024, 12, 24),
                                                    None,
@@ -85,7 +85,7 @@ class DepotPositionTests(unittest.TestCase):
         self.assertEqual(0, len(transaction_collections))
 
     def test_type_long_with_open_and_close_txn_should_have_a_transaction_collection(self):
-        depot_position = DepotPosition("XXX", "STK")
+        depot_position = DepotPosition("XXX", "ConID", "STK")
         depot_position.add_transaction(Transaction(None,
                                                    datetime.date(2024, 12, 24),
                                                    None,
@@ -130,7 +130,7 @@ class DepotPositionTests(unittest.TestCase):
                          transaction_collections[0].get_opening_transactions())
 
     def test_type_long_with_one_open_and_two_close_txn_should_have_two_transactions_collections(self):
-        depot_position = DepotPosition("XXX", "STK")
+        depot_position = DepotPosition("XXX", "ConID", "STK")
         depot_position.add_transaction(Transaction(None,
                                                    datetime.date(2024, 12, 24),
                                                    None,
@@ -207,7 +207,7 @@ class DepotPositionTests(unittest.TestCase):
                          transaction_collections[1].get_opening_transactions())
 
     def test_type_long_with_two_open_and_one_close_txn_should_have_one_transaction_collection(self):
-        depot_position = DepotPosition("XXX", "STK")
+        depot_position = DepotPosition("XXX", "ConID", "STK")
         depot_position.add_transaction(Transaction(None,
                                                    datetime.date(2024, 12, 24),
                                                    None,
@@ -271,7 +271,7 @@ class DepotPositionTests(unittest.TestCase):
                          transaction_collections[0].get_opening_transactions())
 
     def test_type_long_with_unclosed_txn_should_have_a_transaction_collection(self):
-        depot_position = DepotPosition("XXX", "STK")
+        depot_position = DepotPosition("XXX", "ConID", "STK")
         depot_position.add_transaction(Transaction(None,
                                                    datetime.date(2024, 12, 24),
                                                    None,
@@ -319,7 +319,7 @@ class DepotPositionTests(unittest.TestCase):
     def test_type_long_with_open_close_open_txn_should_have_one_transaction_collection(self):
         # Special case: Foreign currency bucket
         # The quantity is equal to the amount
-        depot_position = DepotPosition("XXX", "STK")
+        depot_position = DepotPosition("XXX", "ConID", "STK")
         depot_position.add_transaction(Transaction(None,
                                                    datetime.date(2024, 12, 23),
                                                    None,

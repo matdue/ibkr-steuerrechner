@@ -1,4 +1,5 @@
 import operator
+from bisect import insort
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from functools import reduce
@@ -15,12 +16,13 @@ class DepotPositionType(Enum):
 @dataclass
 class DepotPosition:
     symbol: str
+    con_id: str
     asset_class: str
     transactions: list[Transaction] = field(default_factory=list)
     closed: bool = False
 
     def add_transaction(self, txn: Transaction):
-        self.transactions.append(txn)
+        insort(self.transactions, txn, key=lambda t: t.date)
 
         remaining_quantity = reduce(operator.add, (transaction.quantity for transaction in self.transactions))
         if remaining_quantity == 0:

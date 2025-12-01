@@ -27,57 +27,31 @@ with intro.expander("Flex-Query erstellen"):
     st.write("""
         6. Nun wählen Sie den Umfang aus: Zwingend notwendige Optionen sind _Basiswährungsübersicht_ und
         _Währungsaufschlüsslung_. Bei den Feldern wählen Sie der Einfachheit halber alle aus. Wenn Sie personenbezogene
-        Felder ausschließen möchten, wählen Sie _Balance_, _Account ID_ und _Account Alias_ ab. Alternativ können Sie
-        die Auswahl auf das absolute Minimum reduzieren, das dieses Werkzeug erfordert:
-          - Currency
-          - FXRateToBase
-          - Asset Class
-          - Symbol
-          - Buy/Sell
-          - Description
-          - Strike
-          - Expiry
-          - Put/Call
-          - Report Date
-          - Date
-          - Activity Code
-          - Activity Description
-          - Trade ID
-          - Order ID
-          - Trade Quantity
-          - Trade Price
-          - Trade Gross
-          - Trade Commission
-          - Trade Tax
-          - Amount
-          - Level of Detail
-          - Transaction ID
-          - Action ID""")
+        Felder ausschließen möchten, wählen Sie _Balance_, _Account ID_ und _Account Alias_ ab.""")
     st.image("resources/page/start/fq_create_06.png")
     st.write("""
         7. Nach Bestätigung durch Speichern wählen Sie Trades aus (damit erweitern Sie die Auswahl)""")
     st.image("resources/page/start/fq_create_07.png")
     st.write("""
         8. Beim Umfang genügt die Option _Ausführung_. Bei den Feldern wählen Sie ebenfalls alle aus. Wenn Sie 
-        personenbezogene Felder ausschließen möchten, wählen Sie _Account ID_ und _Account Alias_ ab. Alternativ können 
-        Sie die Auswahl auf das absolute Minimum reduzieren, das dieses Werkzeug erfordert:
-          - Asset Class
-          - Symbol
-          - Trade ID
-          - Open/Close Indicator
-          - Buy/Sell
-          - Quantity
-          - Trade Date""")
+        personenbezogene Felder ausschließen möchten, wählen Sie _Account ID_ und _Account Alias_ ab.""")
     st.image("resources/page/start/fq_create_08.png")
     st.write("""
-        9. Nach Bestätigung durch Speichern scrollen Sie weiter herunter und stellen Sie in der Zustellkonfiguration 
+        9. Nach Bestätigung durch Speichern wählen Sie Kapitalmaßnahmen aus (damit erweitern Sie die Auswahl)""")
+    st.image("resources/page/start/fq_create_corp01.png")
+    st.write("""
+        10. Beim Umfang genügt die Option _Detail_. Bei den Feldern wählen Sie ebenfalls alle aus. Wenn Sie 
+        personenbezogene Felder ausschließen möchten, wählen Sie _Account ID_ und _Account Alias_ ab.""")
+    st.image("resources/page/start/fq_create_corp02.png")
+    st.write("""
+        11. Nach Bestätigung durch Speichern scrollen Sie weiter herunter und stellen Sie in der Zustellkonfiguration 
         das Format auf CSV um. Einbeziehung des Abschnittscodes und der Zeilenbeschriftung muss eingeschaltet werden""")
-    st.image("resources/page/start/fq_create_09.png")
+    st.image("resources/page/start/fq_create_11.png")
     st.write("""
-        10. Abschließend ist die Allgemeine Konfiguration zu prüfen und ggf. zu korrigieren""")
-    st.image("resources/page/start/fq_create_10.png")
+        12. Abschließend ist die Allgemeine Konfiguration zu prüfen und ggf. zu korrigieren""")
+    st.image("resources/page/start/fq_create_12.png")
     st.write("""
-        11. Geschafft! Mit einem Klick auf _Weiter_ kommen Sie zur Bestätigungsseite, die sie mit einem weiteren Klick
+        13. Geschafft! Mit einem Klick auf _Weiter_ kommen Sie zur Bestätigungsseite, die sie mit einem weiteren Klick
         auf _Erstellen_ abschließen.""")
     st.write("""Mit der soeben erstellte Flex-Query kann nun der gewünschten Kontoauszug heruntergeladen werden. Das 
         gilt für diese und alle zukünftigen Auswertungen.""")
@@ -85,11 +59,11 @@ with intro.expander("Flex-Query erstellen"):
         _Kontoauszüge_, wo ebenfalls individuelle Kontoauszüge heruntergeladen werden können, u.a. auch einen mit
         der Kapitalflussrechnung. Allerdings enthält dieser weniger Details, was eine Auswertung erschwert oder unmöglich
         macht. Daher verwenden wir hier die Flex-Query.""")
-    st.write("""Die Flex-Queries enthalten sowohl die Kapitalflussrechnung als auch die Trades. Das vereinfacht die
+    st.write("""Die Flex-Queries enthalten die Kapitalflussrechnung, die Trades und die Kapitalmaßnahmen. Das vereinfacht die
         Handhabung, denn Sie benötigen nur eine Datei je Kalenderjahr, allerdings erschwert es die Verarbeitung mit
-        anderen Programmen, z.B. Excel. Statt nur einer Flex-Query können Sie auch zwei Flex-Queries erstellen (eine
-        mit der Kapitalflussrechnung und eine mit Trades). Für die Auswertung laden Sie beide Dateien hoch; dieses Tool
-        benötigt nicht zwingend alle Daten in einer Datei, sie können auch auf mehrere Dateien verteilt werden.""")
+        anderen Programmen, z.B. Excel. Alternativ können Sie für jeden Abschnitt eine eigene Flex-Query erstellen.
+        Für die Auswertung laden Sie alle Dateien hoch; dieses Tool benötigt nicht zwingend alle Daten in einer Datei, 
+        sie können auch auf mehrere Dateien verteilt werden.""")
 
 intro.write("""Eine detaillierte Beschreibung zum Herunterladen können Sie im nachfolgenden Block nachlesen. Klappen 
     Sie ihn dazu mit einem Klick auf.""")

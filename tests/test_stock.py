@@ -17,6 +17,7 @@ class StockTests(unittest.TestCase):
         self.assertEqual([
             Stock(
                 "GAB PRK",
+                "395298055",
                 "STK",
                 [
                     Transaction("1101770",
@@ -58,6 +59,7 @@ class StockTests(unittest.TestCase):
         self.assertEqual([
             Stock(
                 "HON",
+                "4350",
                 "STK",
                 [
                     Transaction("3328647",
@@ -81,6 +83,7 @@ class StockTests(unittest.TestCase):
         self.assertEqual([
             Stock(
                 "HON",
+                "4350",
                 "STK",
                 [
                     Transaction("3328647",
@@ -113,6 +116,7 @@ class StockTests(unittest.TestCase):
         self.assertEqual([
             Stock(
                 "BAC",
+                "10098",
                 "STK",
                 [
                     Transaction("1338170",
@@ -154,6 +158,7 @@ class StockTests(unittest.TestCase):
         self.assertEqual([
             Stock(
                 "MO",
+                "9769",
                 "STK",
                 [
                     Transaction("0074324",
@@ -195,6 +200,7 @@ class StockTests(unittest.TestCase):
         self.assertEqual([
             Stock(
                 "SPY",
+                "756733",
                 "STK",
                 [
                     Transaction("993694321",
@@ -221,7 +227,7 @@ class StockTests(unittest.TestCase):
         ], result._stocks)
 
     def test_profit_buy_long_unclosed(self):
-        trade = Stock("GAB PRK", "STK")
+        trade = Stock("GAB PRK", "ConID", "STK")
         trade.add_transaction(Transaction("1101770",
                                           date.fromisoformat("20220223"),
                                           "Buy 200 GABELLI EQUITY TRUST INC ",
@@ -254,7 +260,7 @@ class StockTests(unittest.TestCase):
         self.assertEqual(0, len(transaction_collections))
 
     def test_profit_assign_long_close(self):
-        trade = Stock("HON", "STK")
+        trade = Stock("HON", "ConID", "STK")
         trade.add_transaction(Transaction("3328647",
                                           date.fromisoformat("20220617"),
                                           "Buy 100 HONEYWELL INTERNATIONAL INC (Assignment)",
@@ -281,7 +287,7 @@ class StockTests(unittest.TestCase):
         self.assertEqual(Money(Decimal("273.472322904"), "EUR"), profit)
 
     def test_profit_assign_long_close_next_year(self):
-        trade = Stock("BAC", "STK")
+        trade = Stock("BAC", "ConID", "STK")
         trade.add_transaction(Transaction("1338170",
                                           date.fromisoformat("20220614"),
                                           "Buy 100 BANK OF AMERICA CORP (Assignment)",
@@ -317,7 +323,7 @@ class StockTests(unittest.TestCase):
         self.assertEqual(Money(Decimal("-296.361"), "EUR"), profit)
 
     def test_profit_assign_long_close_in_steps(self):
-        trade = Stock("MO", "STK")
+        trade = Stock("MO", "ConID", "STK")
         trade.add_transaction(Transaction("0074324",
                                           date.fromisoformat("20231101"),
                                           "Buy 200 ALTRIA GROUP INC (Assignment)",
@@ -357,7 +363,7 @@ class StockTests(unittest.TestCase):
         self.assertEqual(Money(Decimal("-21.565"), "EUR"), profit)
 
     def test_profit_multiple_transactions(self):
-        trade = Stock("XXX", "STK")
+        trade = Stock("XXX", "ConID", "STK")
         trade.add_transaction(Transaction("001",
                                           date.fromisoformat("20231101"),
                                           "Buy 200 X Company",

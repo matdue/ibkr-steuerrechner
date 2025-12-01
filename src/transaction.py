@@ -27,7 +27,7 @@ class Transaction:
     date: date
     activity: str | None
     buy_sell: BuySell | None
-    open_close: OpenCloseIndicator
+    open_close: OpenCloseIndicator | None
     quantity: Decimal
     amount: Money | None
     amount_orig: Money | None

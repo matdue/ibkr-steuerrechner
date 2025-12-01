@@ -3,7 +3,8 @@ import io
 import pandas as pd
 import streamlit as st
 
-from flex_query import DataError, read_statement_of_funds, read_trades, STATEMENT_OF_FUNDS_COLUMNS, TRADES_COLUMNS
+from flex_query import DataError, read_statement_of_funds, read_trades, STATEMENT_OF_FUNDS_COLUMNS, TRADES_COLUMNS, \
+    read_corporate_actions
 from page.utils import render_footer
 from report import Report
 
@@ -11,10 +12,12 @@ from report import Report
 def create_report(data_files: list):
     df_all_trades = []
     df_all_statement_of_funds = []
+    df_all_corporate_actions = []
     for data_file in data_files:
         data_file_content = data_file.getvalue().decode("utf-8")
         df_trades = read_trades(data_file.name, io.StringIO(data_file_content))
         df_statement_of_funds = read_statement_of_funds(data_file.name, io.StringIO(data_file_content))
+        df_corporate_actions = read_corporate_actions(data_file.name, io.StringIO(data_file_content))
 
 
         # Mix trade data into statement data and vice versa
@@ -32,9 +35,13 @@ def create_report(data_files: list):
         if not df_statement_of_funds.empty:
             df_all_statement_of_funds.append(df_statement_of_funds)
 
+        if not df_corporate_actions.empty:
+            df_all_corporate_actions.append(df_corporate_actions)
+
     # Ensure chronological order of reports and keep order within each report as is
     df_all_trades.sort(key=lambda data_df: data_df["TradeDate"].iloc[0])
     df_all_statement_of_funds.sort(key=lambda data_df: data_df["Date"].iloc[0])
+    df_all_corporate_actions.sort(key=lambda data_df: data_df["Date/Time"].iloc[0])
 
     result = Report()
     if df_all_trades:

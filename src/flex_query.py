@@ -14,13 +14,15 @@ class DataError(Exception):
 DATE_COLUMNS = ["Expiry", "ReportDate", "Date", "TradeDate"]
 STATEMENT_OF_FUNDS_SECTION_CODE = "STFU"
 STATEMENT_OF_FUNDS_COLUMNS = \
-    ["CurrencyPrimary", "FXRateToBase", "AssetClass", "Symbol", "Buy/Sell",
+    ["CurrencyPrimary", "FXRateToBase", "AssetClass", "Symbol", "Conid", "Buy/Sell",
      "Description", "Strike", "Expiry", "Put/Call", "ReportDate", "Date", "ActivityCode",
      "ActivityDescription", "TradeID", "OrderID", "TradeQuantity", "TradePrice", "TradeGross",
      "TradeCommission", "TradeTax", "Amount", "LevelOfDetail", "TransactionID", "ActionID"]
 TRADES_COLUMNS_SECTION_CODE = "TRNT"
 TRADES_COLUMNS = \
-    ["AssetClass", "Symbol", "TradeID", "Open/CloseIndicator", "Buy/Sell", "Quantity", "TradeDate"]
+    ["AssetClass", "Symbol", "Conid", "TradeID", "Open/CloseIndicator", "Buy/Sell", "Quantity", "TradeDate"]
+CORPORATE_ACTIONS_SECTION_CODE = "CORP"
+CORPORATE_ACTIONS_COLUMNS = ["AssetClass","Symbol","Description","Conid","Date/Time","Quantity","Type"]
 
 
 def decimal_from_value(value: str):
@@ -28,6 +30,11 @@ def decimal_from_value(value: str):
     if not trimmed_value:
         return None
     return Decimal(trimmed_value)
+
+
+def date_from_datetime(value: str):
+    date_value, _, _ = value.strip().partition(";")
+    return pd.to_datetime(date_value).date()
 
 
 def csv_part(all_lines: Iterator[str], section_code: str):
@@ -53,7 +60,8 @@ def read_csv_part(filebuf, section_code: str, required_columns: list[str]):
                          "TradeGross": decimal_from_value,
                          "TradeCommission": decimal_from_value,
                          "TradeTax": decimal_from_value,
-                         "Amount": decimal_from_value
+                         "Amount": decimal_from_value,
+                         "Date/Time": date_from_datetime
                      },
                      dtype={
                          "CurrencyPrimary": "category",
@@ -62,6 +70,7 @@ def read_csv_part(filebuf, section_code: str, required_columns: list[str]):
                          "Put/Call": "category",
                          "Open/CloseIndicator": "category",
                          "ActivityCode": "category",
+                         "Conid": "str",
                          "TradeID": "str",
                          "OrderID": "str",
                          "LevelOfDetail": "category",
@@ -120,5 +129,16 @@ def read_trades(filename: str, filebuf):
         return df
     except EmptyDataError:
         return pd.DataFrame(columns=TRADES_COLUMNS)
+    except Exception:
+        raise DataError(filename)
+
+def read_corporate_actions(filename: str, filebuf):
+    try:
+        df = read_csv_part(filebuf, CORPORATE_ACTIONS_SECTION_CODE, CORPORATE_ACTIONS_COLUMNS)
+        convert_dates(df)
+        df.sort_values(by="Date/Time", kind="stable", inplace=True)
+        return df
+    except EmptyDataError:
+        return pd.DataFrame(columns=CORPORATE_ACTIONS_COLUMNS)
     except Exception:
         raise DataError(filename)
