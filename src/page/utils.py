@@ -62,16 +62,13 @@ def display_dataframe(df: pd.DataFrame,
 
 def display_export_buttons(result: Result, filename: str, excel_sheet_name: str, decimal_columns: list[str]):
     columns = {col: COLUMN_NAME_EXPORT.get(col, col) for col in result.df.columns}
-    csv_data = result.to_csv(columns)
     st.download_button("Download als CSV-Datei",
-                       csv_data,
+                       data=lambda: result.to_csv(columns),
                        file_name=f"{filename}.csv",
                        mime="text/csv",
                        on_click="ignore")
-
-    excel_data = result.to_excel(excel_sheet_name, columns, decimal_columns)
     st.download_button("Download als Excel-Datei",
-                       excel_data,
+                       data=lambda: result.to_excel(excel_sheet_name, columns, decimal_columns),
                        file_name=f"{filename}.xlsx",
                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                        on_click="ignore")
