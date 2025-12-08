@@ -14,6 +14,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
                                             Decimal(10),
@@ -29,6 +30,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
                                             Decimal(10),
@@ -37,6 +39,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             Decimal("0.9")))
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
+                                            None,
                                             None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -50,6 +53,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(TaxableTransaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
                                             Decimal(-10),
@@ -60,6 +64,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(1, len(transaction_pairs[0].opening_transactions))
         self.assertEqual([TaxableTransaction(None,
                                              datetime.date(2024, 12, 24),
+                                             None,
                                              None,
                                              BuySell.BUY,
                                              OpenCloseIndicator.OPEN,
@@ -77,6 +82,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
                                             Decimal(20),
@@ -85,6 +91,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             Decimal("0.8")))
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
+                                            None,
                                             None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -98,6 +105,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(TaxableTransaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
                                             Decimal(-10),
@@ -108,6 +116,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(1, len(transaction_pairs[0].opening_transactions))
         self.assertEqual([TaxableTransaction(None,
                                              datetime.date(2024, 12, 24),
+                                             None,
                                              None,
                                              BuySell.BUY,
                                              OpenCloseIndicator.OPEN,
@@ -124,6 +133,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
                                             Decimal(10),
@@ -132,6 +142,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             Decimal("0.8")))
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
+                                            None,
                                             None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -145,6 +156,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(TaxableTransaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
                                             Decimal(-20),
@@ -155,6 +167,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(1, len(transaction_pairs[0].opening_transactions))
         self.assertEqual([TaxableTransaction(None,
                                              datetime.date(2024, 12, 24),
+                                             None,
                                              None,
                                              BuySell.BUY,
                                              OpenCloseIndicator.OPEN,
@@ -171,6 +184,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
                                             Decimal(5),
@@ -179,6 +193,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             Decimal("0.9")))
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
+                                            None,
                                             None,
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -189,6 +204,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
                                             Decimal(-4),
@@ -197,6 +213,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             Decimal("0.9")))
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
+                                            None,
                                             None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -210,6 +227,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(TaxableTransaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
                                             Decimal(-4),
@@ -220,6 +238,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(1, len(transaction_pairs[0].opening_transactions))
         self.assertEqual([TaxableTransaction(None,
                                              datetime.date(2024, 12, 24),
+                                             None,
                                              None,
                                              BuySell.BUY,
                                              OpenCloseIndicator.OPEN,
@@ -234,6 +253,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(TaxableTransaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
                                             Decimal(-16),
@@ -245,6 +265,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual([TaxableTransaction(None,
                                              datetime.date(2024, 12, 24),
                                              None,
+                                             None,
                                              BuySell.BUY,
                                              OpenCloseIndicator.OPEN,
                                              Decimal(1),
@@ -253,6 +274,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                              Decimal("0.9")),
                           TaxableTransaction(None,
                                              datetime.date(2024, 12, 24),
+                                             None,
                                              None,
                                              BuySell.BUY,
                                              OpenCloseIndicator.OPEN,
@@ -269,6 +291,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
                                             Decimal(20),
@@ -278,6 +301,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
                                             Decimal(-10),
@@ -286,6 +310,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             Decimal(1)))
         account.add_transaction(Transaction(None,
                                             datetime.date(2024, 12, 24),
+                                            None,
                                             None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -299,6 +324,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(TaxableTransaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
                                             Decimal(-10),
@@ -309,6 +335,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(1, len(transaction_pairs[0].opening_transactions))
         self.assertEqual([TaxableTransaction(None,
                                              datetime.date(2024, 12, 24),
+                                             None,
                                              None,
                                              BuySell.BUY,
                                              OpenCloseIndicator.OPEN,
@@ -323,6 +350,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(TaxableTransaction(None,
                                             datetime.date(2024, 12, 24),
                                             None,
+                                            None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
                                             Decimal(-10),
@@ -333,6 +361,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         self.assertEqual(1, len(transaction_pairs[1].opening_transactions))
         self.assertEqual([TaxableTransaction(None,
                                              datetime.date(2024, 12, 24),
+                                             None,
                                              None,
                                              BuySell.BUY,
                                              OpenCloseIndicator.OPEN,
@@ -348,6 +377,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         account = ForeignCurrencyAccount("CHF")
         account.add_transaction(Transaction("785240291",
                                             datetime.date.fromisoformat("20190102"),
+                                            None,
                                             "Kauf SGS Ltd.",
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -358,6 +388,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("512069927",
                                             datetime.date.fromisoformat("20190102"),
+                                            None,
                                             "Verkauf Barry Callebaut AG",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -368,6 +399,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("468951058",
                                             datetime.date.fromisoformat("20190102"),
+                                            None,
                                             "Bardividende Zürich Insurance Group",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -378,6 +410,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("187346370",
                                             datetime.date.fromisoformat("20190102"),
+                                            None,
                                             "Bardividende Schindler Holding",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -388,6 +421,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("504795099",
                                             datetime.date.fromisoformat("20190109"),
+                                            None,
                                             "Bardividende Swisscom AG",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -398,6 +432,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("531156445",
                                             datetime.date.fromisoformat("20190306"),
+                                            None,
                                             "Kauf Roche Holding",
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -408,6 +443,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("416245004",
                                             datetime.date.fromisoformat("20190311"),
+                                            None,
                                             "Verkauf Novartis AG",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -418,6 +454,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("815222740",
                                             datetime.date.fromisoformat("20190329"),
+                                            None,
                                             "Habenzinsen Q1 2019",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -428,6 +465,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("125841627",
                                             datetime.date.fromisoformat("20190401"),
+                                            None,
                                             "Bardividende Barry Callebaut AG",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -438,6 +476,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("857357776",
                                             datetime.date.fromisoformat("20190617"),
+                                            None,
                                             "Verkauf Alcon S.A.",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -448,6 +487,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("541976683",
                                             datetime.date.fromisoformat("20190617"),
+                                            None,
                                             "Kauf Nestle S.A.",
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -458,6 +498,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("271741815",
                                             datetime.date.fromisoformat("20190619"),
+                                            None,
                                             "FX Spot",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -468,6 +509,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("968899265",
                                             datetime.date.fromisoformat("20190625"),
+                                            None,
                                             "Bardividende Roche Holding",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -478,6 +520,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("461015249",
                                             datetime.date.fromisoformat("20190903"),
+                                            None,
                                             "Verkauf SGS Ltd.",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -488,6 +531,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("949019684",
                                             datetime.date.fromisoformat("20190903"),
+                                            None,
                                             "Bargeldabhebung",
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -498,6 +542,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("872953563",
                                             datetime.date.fromisoformat("20190926"),
+                                            None,
                                             "Geldeingang",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -508,6 +553,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("463095910",
                                             datetime.date.fromisoformat("20190926"),
+                                            None,
                                             "Gebührenerstattung",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -518,6 +564,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("617254479",
                                             datetime.date.fromisoformat("20190930"),
+                                            None,
                                             "Habenzinsen Q3 2019",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -528,6 +575,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("958933088",
                                             datetime.date.fromisoformat("20191101"),
+                                            None,
                                             "Kauf Zürich Insurance Group",
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -538,6 +586,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("697318797",
                                             datetime.date.fromisoformat("20191101"),
+                                            None,
                                             "Verkauf Swisscom AG",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -548,6 +597,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("191653070",
                                             datetime.date.fromisoformat("20191101"),
+                                            None,
                                             "FX Spot",
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -558,6 +608,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("929424744",
                                             datetime.date.fromisoformat("20191218"),
+                                            None,
                                             "Quellensteuernachzahlung",
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -568,6 +619,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("126227693",
                                             datetime.date.fromisoformat("20191218"),
+                                            None,
                                             "Überweisung",
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -578,6 +630,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("170188373",
                                             datetime.date.fromisoformat("20191218"),
+                                            None,
                                             "Kauf Barry Callebaut AG",
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -588,6 +641,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("987920963",
                                             datetime.date.fromisoformat("20191231"),
+                                            None,
                                             "Zinszahlung",
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
@@ -626,6 +680,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         account.add_transaction(Transaction("U2300002",
                                             datetime.date.fromisoformat("20230101"),
                                             None,
+                                            None,
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
                                             Decimal("579.28"),
@@ -635,6 +690,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("U2300004",
                                             datetime.date.fromisoformat("20230106"),
+                                            None,
                                             None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -646,6 +702,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         account.add_transaction(Transaction("U2300005",
                                             datetime.date.fromisoformat("20230123"),
                                             None,
+                                            None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
                                             Decimal("-273.50"),
@@ -655,6 +712,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.GENUINE))
         account.add_transaction(Transaction("U2300006",
                                             datetime.date.fromisoformat("20230123"),
+                                            None,
                                             None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,
@@ -666,6 +724,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
         account.add_transaction(Transaction("T2300174",
                                             datetime.date.fromisoformat("20230113"),
                                             None,
+                                            None,
                                             BuySell.BUY,
                                             OpenCloseIndicator.OPEN,
                                             Decimal("253.50"),
@@ -675,6 +734,7 @@ class DepotPositionCurrencyTests(unittest.TestCase):
                                             AcquisitionType.NON_GENUINE))
         account.add_transaction(Transaction("U2300007",
                                             datetime.date.fromisoformat("20230123"),
+                                            None,
                                             None,
                                             BuySell.SELL,
                                             OpenCloseIndicator.CLOSE,

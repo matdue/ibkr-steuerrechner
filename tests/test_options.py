@@ -2,6 +2,7 @@ import unittest
 from datetime import date
 from decimal import Decimal
 
+from Asset import Asset
 from money import Money
 from option import Option
 from testutils import read_report
@@ -13,14 +14,14 @@ class OptionsTests(unittest.TestCase):
         result = read_report("resources/options/short_expire.csv")
 
         self.assertEqual(1, len(result._options))
+        asset = Asset("O     220318P00065000", "526803803", "OPT")
         self.assertEqual([
             Option(
-                "O     220318P00065000",
-                "526803803",
-                "OPT",
+                asset,
                 [
                     Transaction("3336143",
                                 date.fromisoformat("20220207"),
+                                asset,
                                 "Sell -1 O 18MAR22 65.0 P ",
                                 BuySell.SELL,
                                 OpenCloseIndicator.OPEN,
@@ -36,14 +37,14 @@ class OptionsTests(unittest.TestCase):
         result = read_report("resources/options/long_expire.csv")
 
         self.assertEqual(1, len(result._options))
+        asset = Asset("PENN  220414P00035000", "509470751", "OPT")
         self.assertEqual([
             Option(
-                "PENN  220414P00035000",
-                "509470751",
-                "OPT",
+                asset,
                 [
                     Transaction("4296309",
                                 date.fromisoformat("20220301"),
+                                asset,
                                 "Buy 1 PENN 14APR22 35.0 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.OPEN,
@@ -59,14 +60,14 @@ class OptionsTests(unittest.TestCase):
         result = read_report("resources/options/short_close.csv")
 
         self.assertEqual(1, len(result._options))
+        asset = Asset("BAC   220318P00044000", "516104549", "OPT")
         self.assertEqual([
             Option(
-                "BAC   220318P00044000",
-                "516104549",
-                "OPT",
+                asset,
                 [
                     Transaction("3336300",
                                 date.fromisoformat("20220207"),
+                                asset,
                                 "Sell -1 BAC 18MAR22 44.0 P ",
                                 BuySell.SELL,
                                 OpenCloseIndicator.OPEN,
@@ -76,6 +77,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.874")),
                     Transaction("3471618",
                                 date.fromisoformat("20220307"),
+                                asset,
                                 "Buy 1 BAC 18MAR22 44.0 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.CLOSE,
@@ -92,14 +94,14 @@ class OptionsTests(unittest.TestCase):
         result = read_report("resources/options/long_close.csv")
 
         self.assertEqual(1, len(result._options))
+        asset = Asset("PENN  220414P00035000", "509470751", "OPT")
         self.assertEqual([
             Option(
-                "PENN  220414P00035000",
-                "509470751",
-                "OPT",
+                asset,
                 [
                     Transaction("4296309",
                                 date.fromisoformat("20220301"),
+                                asset,
                                 "Buy 1 PENN 14APR22 35.0 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.OPEN,
@@ -109,6 +111,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.89897")),
                     Transaction("6239672",
                                 date.fromisoformat("20220304"),
+                                asset,
                                 "Sell -1 PENN 14APR22 35.0 P ",
                                 BuySell.SELL,
                                 OpenCloseIndicator.CLOSE,
@@ -125,14 +128,14 @@ class OptionsTests(unittest.TestCase):
         result = read_report("resources/options/short_two_closes.csv")
 
         self.assertEqual(1, len(result._options))
+        asset = Asset("FCX   221007P00036000", "581797588", "OPT")
         self.assertEqual([
             Option(
-                "FCX   221007P00036000",
-                "581797588",
-                "OPT",
+                asset,
                 [
                     Transaction("3147997",
                                 date.fromisoformat("20220830"),
+                                asset,
                                 "Sell -2 FCX 07OCT22 36 P ",
                                 BuySell.SELL,
                                 OpenCloseIndicator.OPEN,
@@ -142,6 +145,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.9985")),
                     Transaction("6050118",
                                 date.fromisoformat("20220928"),
+                                asset,
                                 "Buy 1 FCX 07OCT22 36 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.CLOSE,
@@ -151,6 +155,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("1.027")),
                     Transaction("6050123",
                                 date.fromisoformat("20220928"),
+                                asset,
                                 "Buy 1 FCX 07OCT22 36 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.CLOSE,
@@ -167,14 +172,14 @@ class OptionsTests(unittest.TestCase):
         result = read_report("resources/options/short_two_closes_surplus_open.csv")
 
         self.assertEqual(2, len(result._options))
+        asset = Asset("FCX   221007P00036000", "581797588", "OPT")
         self.assertEqual([
             Option(
-                "FCX   221007P00036000",
-                "581797588",
-                "OPT",
+                asset,
                 [
                     Transaction("3147997",
                                 date.fromisoformat("20220830"),
+                                asset,
                                 "Sell -2 FCX 07OCT22 36 P ",
                                 BuySell.SELL,
                                 OpenCloseIndicator.OPEN,
@@ -184,6 +189,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.9985")),
                     Transaction("6050118",
                                 date.fromisoformat("20220928"),
+                                asset,
                                 "Buy 1 FCX 07OCT22 36 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.CLOSE,
@@ -193,6 +199,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("1.027")),
                     Transaction("6050123",
                                 date.fromisoformat("20220928"),
+                                asset,
                                 "Buy 1 FCX 07OCT22 36 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.CLOSE,
@@ -204,12 +211,11 @@ class OptionsTests(unittest.TestCase):
                 True
             ),
             Option(
-                "FCX   221007P00036000",
-                "581797588",
-                "OPT",
+                asset,
                 [
                     Transaction("6050124",
                                 date.fromisoformat("20220928"),
+                                asset,
                                 "Buy 1 FCX 07OCT22 36 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.OPEN,
@@ -223,14 +229,14 @@ class OptionsTests(unittest.TestCase):
         ], result._options)
 
     def test_profit_short_one_open(self):
+        asset = Asset("XXX", "ConID", "OPT")
         trade = Option(
-            "XXX",
-            "ConID",
-            "OPT",
+            asset,
             [
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220301"),
+                    asset,
                     "Sell 1 XXX 14APR22 35.0 P ",
                     BuySell.SELL,
                     OpenCloseIndicator.OPEN,
@@ -249,14 +255,14 @@ class OptionsTests(unittest.TestCase):
         self.assertEqual(Money(Decimal("50"), "EUR"), profit)
 
     def test_profit_short_one_open_one_close_same_year(self):
+        asset = Asset("XXX", "ConID", "OPT")
         trade = Option(
-            "XXX",
-            "ConID",
-            "OPT",
+            asset,
             [
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220301"),
+                    asset,
                     "Sell 1 XXX 14APR22 35.0 P ",
                     BuySell.SELL,
                     OpenCloseIndicator.OPEN,
@@ -268,6 +274,7 @@ class OptionsTests(unittest.TestCase):
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220421"),
+                    asset,
                     "Buy 1 XXX 14APR22 35.0 P ",
                     BuySell.BUY,
                     OpenCloseIndicator.CLOSE,
@@ -289,14 +296,14 @@ class OptionsTests(unittest.TestCase):
         self.assertEqual(Money(Decimal("-5.50"), "EUR"), profit)
 
     def test_profit_short_one_open_one_close_different_year(self):
+        asset = Asset("XXX", "ConID", "OPT")
         trade = Option(
-            "XXX",
-            "ConID",
-            "OPT",
+            asset,
             [
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220301"),
+                    asset,
                     "Sell 1 XXX 14APR23 35.0 P ",
                     BuySell.SELL,
                     OpenCloseIndicator.OPEN,
@@ -308,6 +315,7 @@ class OptionsTests(unittest.TestCase):
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20230421"),
+                    asset,
                     "Buy 1 XXX 14APR23 35.0 P ",
                     BuySell.BUY,
                     OpenCloseIndicator.CLOSE,
@@ -330,14 +338,14 @@ class OptionsTests(unittest.TestCase):
         self.assertEqual(Money(Decimal("-5.50"), "EUR"), profit)
 
     def test_profit_short_two_open_close_different_years(self):
+        asset = Asset("XXX", "ConID", "OPT")
         trade = Option(
-            "XXX",
-            "ConID",
-            "OPT",
+            asset,
             [
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220301"),
+                    asset,
                     "Sell 2 XXX 14APR23 35.0 P ",
                     BuySell.SELL,
                     OpenCloseIndicator.OPEN,
@@ -349,6 +357,7 @@ class OptionsTests(unittest.TestCase):
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220421"),
+                    asset,
                     "Buy 1 XXX 14APR23 35.0 P ",
                     BuySell.BUY,
                     OpenCloseIndicator.CLOSE,
@@ -360,6 +369,7 @@ class OptionsTests(unittest.TestCase):
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20230421"),
+                    asset,
                     "Buy 1 XXX 14APR23 35.0 P ",
                     BuySell.BUY,
                     OpenCloseIndicator.CLOSE,
@@ -384,14 +394,14 @@ class OptionsTests(unittest.TestCase):
         self.assertEqual(Money(Decimal("-5.50"), "EUR"), profit)
 
     def test_profit_short_one_open_one_open_two_close(self):
+        asset = Asset("XXX", "ConID", "OPT")
         trade = Option(
-            "XXX",
-            "ConID",
-            "OPT",
+            asset,
             [
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220301"),
+                    asset,
                     "Sell 1 XXX 14APR23 35.0 P ",
                     BuySell.SELL,
                     OpenCloseIndicator.OPEN,
@@ -403,6 +413,7 @@ class OptionsTests(unittest.TestCase):
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20230301"),
+                    asset,
                     "Sell 1 XXX 14APR23 35.0 P ",
                     BuySell.SELL,
                     OpenCloseIndicator.OPEN,
@@ -414,6 +425,7 @@ class OptionsTests(unittest.TestCase):
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20230421"),
+                    asset,
                     "Buy 2 XXX 14APR23 35.0 P ",
                     BuySell.BUY,
                     OpenCloseIndicator.CLOSE,
@@ -441,14 +453,14 @@ class OptionsTests(unittest.TestCase):
         result = read_report("resources/options/short_split.csv")
 
         self.assertEqual(1, len(result._options))
+        asset = Asset("NFLX  251121P01140000", "798857364", "OPT")
         self.assertEqual([
             Option(
-                "NFLX  251121P01140000",
-                "798857364",
-                "OPT",
+                asset,
                 [
                     Transaction("1196327638",
                                 date.fromisoformat("20251027"),
+                                asset,
                                 "Sell -1 NFLX 21NOV25 1140 P ",
                                 BuySell.SELL,
                                 OpenCloseIndicator.OPEN,
@@ -458,6 +470,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.85875")),
                     Transaction(None,
                                 date.fromisoformat("20251114"),
+                                asset,
                                 "NFLX(US64110L1061) SPLIT 10 FOR 1 (NFLX  251121P00114000, NFLX 21NOV25 114 P, )",
                                 None,
                                 None,
@@ -467,6 +480,7 @@ class OptionsTests(unittest.TestCase):
                                 None),
                     Transaction("1226458965",
                                 date.fromisoformat("20251120"),
+                                asset,
                                 "Buy 2 NFLX 21NOV25 114 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.CLOSE,
@@ -476,6 +490,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.86743")),
                     Transaction("1226458971",
                                 date.fromisoformat("20251120"),
+                                asset,
                                 "Buy 1 NFLX 21NOV25 114 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.CLOSE,
@@ -485,6 +500,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.86743")),
                     Transaction("1226458972",
                                 date.fromisoformat("20251120"),
+                                asset,
                                 "Buy 2 NFLX 21NOV25 114 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.CLOSE,
@@ -494,6 +510,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.86743")),
                     Transaction("1226459009",
                                 date.fromisoformat("20251120"),
+                                asset,
                                 "Buy 2 NFLX 21NOV25 114 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.CLOSE,
@@ -503,6 +520,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.86743")),
                     Transaction("1226459899",
                                 date.fromisoformat("20251120"),
+                                asset,
                                 "Buy 1 NFLX 21NOV25 114 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.CLOSE,
@@ -512,6 +530,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.86743")),
                     Transaction("1226459900",
                                 date.fromisoformat("20251120"),
+                                asset,
                                 "Buy 2 NFLX 21NOV25 114 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.CLOSE,
@@ -535,14 +554,14 @@ class OptionsTests(unittest.TestCase):
         self.assertEqual(Money(Decimal("-1182.651286224"), "EUR"), transaction_collections[6].profit())
 
     def test_profit_long_one_open(self):
+        asset = Asset("XXX", "ConID", "OPT")
         trade = Option(
-            "XXX",
-            "ConID",
-            "OPT",
+            asset,
             [
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220301"),
+                    asset,
                     "Buy 1 XXX 14APR22 35.0 P ",
                     BuySell.BUY,
                     OpenCloseIndicator.OPEN,
@@ -558,14 +577,14 @@ class OptionsTests(unittest.TestCase):
         self.assertEqual(0, len(transaction_collections))
 
     def test_profit_long_one_open_one_close_same_year(self):
+        asset = Asset("XXX", "ConID", "OPT")
         trade = Option(
-            "XXX",
-            "ConID",
-            "OPT",
+            asset,
             [
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220301"),
+                    asset,
                     "Buy 1 XXX 14APR22 35.0 P ",
                     BuySell.BUY,
                     OpenCloseIndicator.OPEN,
@@ -577,6 +596,7 @@ class OptionsTests(unittest.TestCase):
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220421"),
+                    asset,
                     "Sell 1 XXX 14APR22 35.0 P ",
                     BuySell.SELL,
                     OpenCloseIndicator.CLOSE,
@@ -595,14 +615,14 @@ class OptionsTests(unittest.TestCase):
         self.assertEqual(Money(Decimal("-44.50"), "EUR"), profit)
 
     def test_profit_long_one_open_one_close_different_year(self):
+        asset = Asset("XXX", "ConID", "OPT")
         trade = Option(
-            "XXX",
-            "ConID",
-            "OPT",
+            asset,
             [
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220301"),
+                    asset,
                     "Buy 1 XXX 14APR23 35.0 P ",
                     BuySell.BUY,
                     OpenCloseIndicator.OPEN,
@@ -614,6 +634,7 @@ class OptionsTests(unittest.TestCase):
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20230421"),
+                    asset,
                     "Sell 1 XXX 14APR23 35.0 P ",
                     BuySell.SELL,
                     OpenCloseIndicator.CLOSE,
@@ -632,14 +653,14 @@ class OptionsTests(unittest.TestCase):
         self.assertEqual(Money(Decimal("-44.50"), "EUR"), profit)
 
     def test_profit_long_two_open_close_different_years(self):
+        asset = Asset("XXX", "ConID", "OPT")
         trade = Option(
-            "XXX",
-            "ConID",
-            "OPT",
+            asset,
             [
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220301"),
+                    asset,
                     "Buy 2 XXX 14APR23 35.0 P ",
                     BuySell.BUY,
                     OpenCloseIndicator.OPEN,
@@ -651,6 +672,7 @@ class OptionsTests(unittest.TestCase):
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220421"),
+                    asset,
                     "Sell 1 XXX 14APR23 35.0 P ",
                     BuySell.SELL,
                     OpenCloseIndicator.CLOSE,
@@ -662,6 +684,7 @@ class OptionsTests(unittest.TestCase):
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20230421"),
+                    asset,
                     "Sell 1 XXX 14APR23 35.0 P ",
                     BuySell.SELL,
                     OpenCloseIndicator.CLOSE,
@@ -684,14 +707,14 @@ class OptionsTests(unittest.TestCase):
         self.assertEqual(Money(Decimal("-19.50"), "EUR"), profit)
 
     def test_profit_long_one_open_one_open_two_close(self):
+        asset = Asset("XXX", "ConID", "OPT")
         trade = Option(
-            "XXX",
-            "ConID",
-            "OPT",
+            asset,
             [
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20220301"),
+                    asset,
                     "Buy 1 XXX 14APR23 35.0 P ",
                     BuySell.BUY,
                     OpenCloseIndicator.OPEN,
@@ -703,6 +726,7 @@ class OptionsTests(unittest.TestCase):
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20230301"),
+                    asset,
                     "Buy 1 XXX 14APR23 35.0 P ",
                     BuySell.BUY,
                     OpenCloseIndicator.OPEN,
@@ -714,6 +738,7 @@ class OptionsTests(unittest.TestCase):
                 Transaction(
                     "tradeId",
                     date.fromisoformat("20230421"),
+                    asset,
                     "Sell 2 XXX 14APR23 35.0 P ",
                     BuySell.SELL,
                     OpenCloseIndicator.CLOSE,
@@ -735,14 +760,14 @@ class OptionsTests(unittest.TestCase):
         result = read_report("resources/options/long_split.csv")
 
         self.assertEqual(1, len(result._options))
+        asset = Asset("NFLX  251121P01095000", "824334295", "OPT")
         self.assertEqual([
             Option(
-                "NFLX  251121P01095000",
-                "824334295",
-                "OPT",
+                asset,
                 [
                     Transaction("1196327735",
                                 date.fromisoformat("20251027"),
+                                asset,
                                 "Buy 1 NFLX 21NOV25 1095 P ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.OPEN,
@@ -752,6 +777,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.85875")),
                     Transaction(None,
                                 date.fromisoformat("20251114"),
+                                asset,
                                 "NFLX(US64110L1061) SPLIT 10 FOR 1 (NFLX  251121P00109500, NFLX 21NOV25 109.5 P, )",
                                 None,
                                 None,
@@ -761,6 +787,7 @@ class OptionsTests(unittest.TestCase):
                                 None),
                     Transaction("1226458973",
                                 date.fromisoformat("20251120"),
+                                asset,
                                 "Sell -2 NFLX 21NOV25 109.5 P ",
                                 BuySell.SELL,
                                 OpenCloseIndicator.CLOSE,
@@ -770,6 +797,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.86743")),
                     Transaction("1226459047",
                                 date.fromisoformat("20251120"),
+                                asset,
                                 "Sell -1 NFLX 21NOV25 109.5 P ",
                                 BuySell.SELL,
                                 OpenCloseIndicator.CLOSE,
@@ -779,6 +807,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.86743")),
                     Transaction("1226459048",
                                 date.fromisoformat("20251120"),
+                                asset,
                                 "Sell -2 NFLX 21NOV25 109.5 P ",
                                 BuySell.SELL,
                                 OpenCloseIndicator.CLOSE,
@@ -788,6 +817,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.86743")),
                     Transaction("1226459856",
                                 date.fromisoformat("20251120"),
+                                asset,
                                 "Sell -1 NFLX 21NOV25 109.5 P ",
                                 BuySell.SELL,
                                 OpenCloseIndicator.CLOSE,
@@ -797,6 +827,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.86743")),
                     Transaction("1226459857",
                                 date.fromisoformat("20251120"),
+                                asset,
                                 "Sell -2 NFLX 21NOV25 109.5 P ",
                                 BuySell.SELL,
                                 OpenCloseIndicator.CLOSE,
@@ -806,6 +837,7 @@ class OptionsTests(unittest.TestCase):
                                 Decimal("0.86743")),
                     Transaction("1226459884",
                                 date.fromisoformat("20251120"),
+                                asset,
                                 "Sell -2 NFLX 21NOV25 109.5 P ",
                                 BuySell.SELL,
                                 OpenCloseIndicator.CLOSE,

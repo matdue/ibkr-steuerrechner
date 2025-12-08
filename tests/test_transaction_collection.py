@@ -13,6 +13,7 @@ class TransactionCollectionTest(unittest.TestCase):
         transaction = Transaction(
             trade_id="Trade ID",
             date=datetime.date(2025, 1, 1),
+            asset=None,
             activity="Activity",
             buy_sell=BuySell.BUY,
             open_close=OpenCloseIndicator.OPEN,
@@ -29,6 +30,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -46,6 +48,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -65,6 +68,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -84,6 +88,7 @@ class TransactionCollectionTest(unittest.TestCase):
             Transaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -96,6 +101,7 @@ class TransactionCollectionTest(unittest.TestCase):
             Transaction(
                 trade_id="Trade ID #2",
                 date=datetime.date(2025, 1, 2),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -113,6 +119,7 @@ class TransactionCollectionTest(unittest.TestCase):
             SingleTransaction(TaxableTransaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -126,6 +133,7 @@ class TransactionCollectionTest(unittest.TestCase):
             SingleTransaction(TaxableTransaction(
                 trade_id="Trade ID #2",
                 date=datetime.date(2025, 1, 2),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -143,6 +151,7 @@ class TransactionCollectionTest(unittest.TestCase):
             Transaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -155,6 +164,7 @@ class TransactionCollectionTest(unittest.TestCase):
             Transaction(
                 trade_id="Trade ID #2",
                 date=datetime.date(2026, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -172,6 +182,7 @@ class TransactionCollectionTest(unittest.TestCase):
             SingleTransaction(TaxableTransaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -189,6 +200,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -202,6 +214,7 @@ class TransactionCollectionTest(unittest.TestCase):
             [TaxableTransaction(
                 trade_id="Trade ID #2",
                 date=datetime.date(2025, 1, 2),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -221,6 +234,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -234,6 +248,7 @@ class TransactionCollectionTest(unittest.TestCase):
             [TaxableTransaction(
                 trade_id="Trade ID #2",
                 date=datetime.date(2025, 1, 2),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -253,6 +268,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -266,6 +282,7 @@ class TransactionCollectionTest(unittest.TestCase):
             [TaxableTransaction(
                 trade_id="Trade ID #2",
                 date=datetime.date(2025, 1, 2),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -285,6 +302,7 @@ class TransactionCollectionTest(unittest.TestCase):
             Transaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -297,6 +315,7 @@ class TransactionCollectionTest(unittest.TestCase):
             Transaction(
                 trade_id="Trade ID #2",
                 date=datetime.date(2025, 1, 2),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -315,6 +334,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -331,6 +351,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID #2",
                 date=datetime.date(2025, 1, 2),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -349,6 +370,7 @@ class TransactionCollectionTest(unittest.TestCase):
             Transaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -361,6 +383,7 @@ class TransactionCollectionTest(unittest.TestCase):
             Transaction(
                 trade_id="Trade ID #2",
                 date=datetime.date(2025, 1, 2),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -373,6 +396,7 @@ class TransactionCollectionTest(unittest.TestCase):
             Transaction(
                 trade_id="Trade ID #3",
                 date=datetime.date(2025, 1, 3),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -391,6 +415,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -407,6 +432,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID #2",
                 date=datetime.date(2025, 1, 2),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -425,6 +451,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -441,6 +468,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID #3",
                 date=datetime.date(2025, 1, 3),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -459,6 +487,7 @@ class TransactionCollectionTest(unittest.TestCase):
             Transaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -471,6 +500,7 @@ class TransactionCollectionTest(unittest.TestCase):
             Transaction(
                 trade_id="Trade ID #2",
                 date=datetime.date(2025, 1, 2),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -483,6 +513,7 @@ class TransactionCollectionTest(unittest.TestCase):
             Transaction(
                 trade_id="Trade ID #3",
                 date=datetime.date(2025, 1, 3),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,
@@ -501,6 +532,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID #1",
                 date=datetime.date(2025, 1, 1),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -517,6 +549,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID #2",
                 date=datetime.date(2025, 1, 2),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.BUY,
                 open_close=OpenCloseIndicator.OPEN,
@@ -533,6 +566,7 @@ class TransactionCollectionTest(unittest.TestCase):
             TaxableTransaction(
                 trade_id="Trade ID #3",
                 date=datetime.date(2025, 1, 3),
+                asset=None,
                 activity="Activity",
                 buy_sell=BuySell.SELL,
                 open_close=OpenCloseIndicator.CLOSE,

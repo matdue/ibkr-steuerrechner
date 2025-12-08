@@ -3,10 +3,11 @@ from datetime import date
 from decimal import Decimal
 from io import BytesIO
 from itertools import groupby
-from typing import Iterable
+from typing import Iterable, Self
 
 import pandas as pd
 
+from Asset import Asset
 from deposit import Deposit
 from depot_position import DepotPosition, DepotPositionType
 from dividend import Dividend
@@ -58,6 +59,10 @@ class Result:
         excel_file.seek(0)
         return excel_file
 
+    def filter(self, by: str, sub_categories: list[str]) -> Self:
+        df_filtered = self.df[self.df[by].isin(sub_categories)]
+        return Result(self.year, df_filtered)
+
 
 class Report:
     def __init__(self):
@@ -108,13 +113,14 @@ class Report:
 
     def _process_treasury_bill(self, row: pd.Series):
         symbol = row["Symbol"]
-        depot_position = next((p for p in self._treasury_bills if p.symbol == symbol and not p.closed), None)
+        depot_position = next((p for p in self._treasury_bills if p.asset.symbol == symbol and not p.closed), None)
         if depot_position is None:
             return
         # Maturity record does not include quantity, so we copy it from amount with 1 quantity = 1 USD
         maturity_transaction = Transaction(
             None,
             row["Date"],
+            None,
             row["ActivityDescription"],
             None,
             OpenCloseIndicator.CLOSE,
@@ -140,6 +146,7 @@ class Report:
         foreign_currency_account.add_transaction(Transaction(
             row["TradeID"],
             row["Date"],
+            None,
             row["ActivityDescription"],
             BuySell.BUY if amount_orig.amount >= 0 else BuySell.SELL,
             OpenCloseIndicator.OPEN if amount_orig.amount >= 0 else OpenCloseIndicator.CLOSE,
@@ -239,6 +246,7 @@ class Report:
                 yield (transaction_no,
                        transaction.date,
                        transaction.activity,
+                       transaction.asset.sub_category,
                        transaction.trade_id,
                        transaction.quantity,
                        round(transaction.amount.amount, 2))
@@ -247,7 +255,7 @@ class Report:
                         for stock in self._stocks
                         for transaction in stock.transactions
                         if transaction.date.year == year)
-        return pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount"],
+        return pd.DataFrame(columns=["sequence", "date", "activity", "stock_type", "trade_id", "quantity", "amount"],
                             data=stock_line(transactions))
 
     def get_stocks(self, year: int, depot_position_type: DepotPositionType) -> Result:
@@ -258,6 +266,7 @@ class Report:
                     yield (transaction_no,
                            opening_transaction.date,
                            opening_transaction.activity,
+                           opening_transaction.asset.sub_category,
                            opening_transaction.trade_id,
                            opening_transaction.quantity,
                            round(opening_transaction.amount.amount, 2),
@@ -266,6 +275,7 @@ class Report:
                 yield (transaction_no,
                        closing_transaction.date,
                        closing_transaction.activity,
+                       closing_transaction.asset.sub_category,
                        closing_transaction.trade_id,
                        closing_transaction.quantity,
                        round(closing_transaction.amount.amount, 2),
@@ -275,7 +285,7 @@ class Report:
                                    for stock in self._stocks
                                    if stock.position_type() == depot_position_type
                                    for collection in stock.transaction_collections(year))
-        df = pd.DataFrame(columns=["sequence", "date", "activity", "trade_id", "quantity", "amount", "profit"],
+        df = pd.DataFrame(columns=["sequence", "date", "activity", "stock_type", "trade_id", "quantity", "amount", "profit"],
                           data=stock_line(transaction_collections))
         result = Result(year, df)
         return result
@@ -457,13 +467,14 @@ class Report:
             case _:
                 self.add_unknown_line(row)
 
-    def _find_stock_position(self, symbol: str, con_id: str, asset_class: str) -> Stock | None:
+    def _find_stock_position(self, symbol: str, con_id: str, asset_class: str, sub_category: str) -> Stock | None:
         depot_position = next((stock
                                for stock in self._stocks
-                               if stock.con_id == con_id and not stock.closed),
+                               if stock.asset.con_id == con_id and not stock.closed),
                               None)
         if depot_position is None:
-            new_stock = Stock(symbol, con_id, asset_class)
+            asset = Asset(symbol, con_id, asset_class, sub_category)
+            new_stock = Stock(asset)
             self._stocks.append(new_stock)
             depot_position = new_stock
 
@@ -472,10 +483,11 @@ class Report:
     def _find_option_position(self, symbol: str, con_id: str, asset_class: str) -> Option | None:
         depot_position = next((option
                                for option in self._options
-                               if option.con_id == con_id and not option.closed),
+                               if option.asset.con_id == con_id and not option.closed),
                               None)
         if depot_position is None:
-            new_option = Option(symbol, con_id, asset_class)
+            asset = Asset(symbol, con_id, asset_class)
+            new_option = Option(asset)
             self._options.append(new_option)
             depot_position = new_option
 
@@ -484,10 +496,11 @@ class Report:
     def _find_treasury_bill_position(self, symbol: str, con_id: str, asset_class: str) -> TreasuryBill | None:
         depot_position = next((t_bill
                                for t_bill in self._treasury_bills
-                               if t_bill.con_id == con_id and not t_bill.closed),
+                               if t_bill.asset.con_id == con_id and not t_bill.closed),
                               None)
         if depot_position is None:
-            new_t_bill = TreasuryBill(symbol, con_id, asset_class)
+            asset = Asset(symbol, con_id, asset_class)
+            new_t_bill = TreasuryBill(asset)
             self._treasury_bills.append(new_t_bill)
             depot_position = new_t_bill
 
@@ -506,7 +519,7 @@ class Report:
         depot_position: DepotPosition | None = None
         match asset_class:
             case "STK":
-                depot_position = self._find_stock_position(symbol, con_id, asset_class)
+                depot_position = self._find_stock_position(symbol, con_id, asset_class, row["SubCategory"])
 
             case "OPT":
                 depot_position = self._find_option_position(symbol, con_id, asset_class)
@@ -524,6 +537,7 @@ class Report:
             depot_position.add_transaction(Transaction(
                 trade_id,
                 row["TradeDate"],
+                depot_position.asset,
                 None,
                 BuySell(buy_sell),
                 OpenCloseIndicator(row["Open/CloseIndicator"]),
@@ -536,6 +550,7 @@ class Report:
             depot_position.add_transaction(Transaction(
                 row["TradeID"],
                 row["Date"],
+                depot_position.asset,
                 row["ActivityDescription"],
                 BuySell(row["Buy/Sell"]),
                 OpenCloseIndicator(row["Open/CloseIndicator"]),
@@ -549,8 +564,8 @@ class Report:
         asset_class = row["AssetClass"]
         if asset_class not in ["OPT", "BILL"]:
             raise NotImplementedError()
-        type = row["Type"]
-        if type not in ["TM", "FS"]:
+        action_type = row["Type"]
+        if action_type not in ["TM", "FS"]:
             raise NotImplementedError()
         symbol = row["Symbol"]
         con_id = row["Conid"]
@@ -567,6 +582,7 @@ class Report:
         depot_position.add_transaction(Transaction(
             None,
             row["Date/Time"],
+            depot_position.asset,
             row["Description"],
             None,
             None,

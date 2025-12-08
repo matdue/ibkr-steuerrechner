@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from functools import reduce
 
+from Asset import Asset
 from transaction import Transaction, OpenCloseIndicator, BuySell
 from transaction_collection import TransactionCollection, to_single_transactions, to_opening_closing_pairs
 
@@ -15,9 +16,7 @@ class DepotPositionType(Enum):
 
 @dataclass
 class DepotPosition:
-    symbol: str
-    con_id: str
-    asset_class: str
+    asset: Asset
     transactions: list[Transaction] = field(default_factory=list)
     closed: bool = False
 
@@ -39,7 +38,7 @@ class DepotPosition:
             return DepotPositionType.SHORT
 
     def transaction_collections(self, year: int) -> list[TransactionCollection]:
-        match self.asset_class:
+        match self.asset.asset_class:
             case "STK" | "BILL":
                 return to_opening_closing_pairs(self.transactions, year)
             case "OPT":

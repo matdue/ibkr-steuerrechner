@@ -23,7 +23,8 @@ COLUMN_NAME = {
     "fx_rate": "Devisenkurs",
     "tax_relevant": "Ergebnisrelevant",
     "foreign_currency": "Fremdwährung",
-    "correction": "Korrektur"
+    "correction": "Korrektur",
+    "stock_type": "Typ"
 }
 
 COLUMN_NAME_EXPORT = {
@@ -39,7 +40,8 @@ COLUMN_NAME_EXPORT = {
     "fx_rate": "Devisenkurs",
     "tax_relevant": "Ergebnisrelevant",
     "foreign_currency": "Fremdwährung",
-    "correction": "Korrektur"
+    "correction": "Korrektur",
+    "stock_type": "Typ"
 }
 
 current_locale = babel.Locale("de_DE")

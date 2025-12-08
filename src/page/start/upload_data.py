@@ -24,7 +24,8 @@ def create_report(data_files: list):
         df_trades = df_trades.merge(df_statement_of_funds.filter(["TradeID", "AssetClass", "Symbol", "Buy/Sell",
                                                                   "Date", "ActivityDescription", "TradeQuantity",
                                                                   "Amount", "CurrencyPrimary", "Amount_orig",
-                                                                  "CurrencyPrimary_orig", "FXRateToBase_orig"]),
+                                                                  "CurrencyPrimary_orig", "FXRateToBase_orig",
+                                                                  "SubCategory"]),
                                     how="left",
                                     on=["TradeID", "AssetClass", "Symbol", "Buy/Sell"])
         if not df_trades.empty:

@@ -28,6 +28,7 @@ class TaxableTransaction(Transaction):
         return cls(
             trade_id=transaction.trade_id,
             date=transaction.date,
+            asset=transaction.asset,
             activity=transaction.activity,
             buy_sell=transaction.buy_sell,
             open_close=transaction.open_close,

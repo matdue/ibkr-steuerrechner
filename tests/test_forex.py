@@ -23,6 +23,7 @@ class DepositTests(unittest.TestCase):
         self.assertEqual(1, len(foreign_currency_bucket.transactions))
         self.assertEqual(Transaction("7283145",
                                      date.fromisoformat("20220512"),
+                                     None,
                                      "Net Amount in Base from Forex Trade: -10,000 EUR.USD",
                                      BuySell.BUY,
                                      OpenCloseIndicator.OPEN,

@@ -14,7 +14,7 @@ class DataError(Exception):
 DATE_COLUMNS = ["Expiry", "ReportDate", "Date", "TradeDate"]
 STATEMENT_OF_FUNDS_SECTION_CODE = "STFU"
 STATEMENT_OF_FUNDS_COLUMNS = \
-    ["CurrencyPrimary", "FXRateToBase", "AssetClass", "Symbol", "Conid", "Buy/Sell",
+    ["CurrencyPrimary", "FXRateToBase", "AssetClass", "SubCategory", "Symbol", "Conid", "Buy/Sell",
      "Description", "Strike", "Expiry", "Put/Call", "ReportDate", "Date", "ActivityCode",
      "ActivityDescription", "TradeID", "OrderID", "TradeQuantity", "TradePrice", "TradeGross",
      "TradeCommission", "TradeTax", "Amount", "LevelOfDetail", "TransactionID", "ActionID"]

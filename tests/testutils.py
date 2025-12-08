@@ -17,7 +17,8 @@ def read_report(filename: str) -> Report:
         df_trades = df_trades.merge(df_statement_of_funds.filter(["TradeID", "AssetClass", "Conid", "Buy/Sell",
                                                                   "Date", "ActivityDescription", "TradeQuantity",
                                                                   "Amount", "CurrencyPrimary", "Amount_orig",
-                                                                  "CurrencyPrimary_orig", "FXRateToBase_orig"]),
+                                                                  "CurrencyPrimary_orig", "FXRateToBase_orig",
+                                                                  "SubCategory"]),
                                     how="left",
                                     on=["TradeID", "AssetClass", "Conid", "Buy/Sell"])
         df_statement_of_funds = df_statement_of_funds.merge(df_trades.filter(["TradeID", "Open/CloseIndicator"]),

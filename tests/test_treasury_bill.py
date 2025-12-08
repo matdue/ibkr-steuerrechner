@@ -2,6 +2,7 @@ import unittest
 from datetime import date
 from decimal import Decimal
 
+from Asset import Asset
 from money import Money
 from testutils import read_report
 from transaction import Transaction, BuySell, OpenCloseIndicator
@@ -13,14 +14,14 @@ class TreasuryBillTests(unittest.TestCase):
         result = read_report("resources/treasury_bill/buy_long_unclosed.csv")
 
         self.assertEqual(1, len(result._treasury_bills))
+        asset = Asset("912797HR1", "667447053", "BILL")
         self.assertEqual([
             TreasuryBill(
-                "912797HR1",
-                "667447053",
-                "BILL",
+                asset,
                 [
                     Transaction("0959089",
                                 date.fromisoformat("20231122"),
+                                asset,
                                 "Buy 5,000 B 05/23/24 ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.OPEN,
@@ -37,14 +38,14 @@ class TreasuryBillTests(unittest.TestCase):
         result = read_report("resources/treasury_bill/buy_long_close.csv")
 
         self.assertEqual(1, len(result._treasury_bills))
+        asset = Asset("912797HR1", "667447053", "BILL")
         self.assertEqual([
             TreasuryBill(
-                "912797HR1",
-                "667447053",
-                "BILL",
+                asset,
                 [
                     Transaction("0959089",
                                 date.fromisoformat("20231122"),
+                                asset,
                                 "Buy 5,000 B 05/23/24 ",
                                 BuySell.BUY,
                                 OpenCloseIndicator.OPEN,
@@ -54,6 +55,7 @@ class TreasuryBillTests(unittest.TestCase):
                                 Decimal("0.91842")),
                     Transaction(None,
                                 date.fromisoformat("20240522"),
+                                None,
                                 "(US912797HR13) TBILL MATURITY (912797HR1, B 05/23/24, US912797HR13)",
                                 None,
                                 OpenCloseIndicator.CLOSE,
@@ -67,9 +69,11 @@ class TreasuryBillTests(unittest.TestCase):
         ], result._treasury_bills)
 
     def test_profit_buy_long_unclosed(self):
-        t_bill = TreasuryBill("912797HR1", "ConID", "BILL")
+        asset = Asset("912797HR1", "ConID", "BILL")
+        t_bill = TreasuryBill(asset)
         t_bill.add_transaction(Transaction("0959089",
                                            date.fromisoformat("20231122"),
+                                           asset,
                                            "Buy 5,000 B 05/23/24 ",
                                            BuySell.BUY,
                                            OpenCloseIndicator.OPEN,
@@ -82,9 +86,11 @@ class TreasuryBillTests(unittest.TestCase):
         self.assertEqual(0, len(transaction_collections))
 
     def test_profit_buy_long_close(self):
-        t_bill = TreasuryBill("912797HR1", "ConID", "BILL")
+        asset = Asset("912797HR1", "ConID", "BILL")
+        t_bill = TreasuryBill(asset)
         t_bill.add_transaction(Transaction("0959089",
                                            date.fromisoformat("20231122"),
+                                           asset,
                                            "Buy 5,000 B 05/23/24 ",
                                            BuySell.BUY,
                                            OpenCloseIndicator.OPEN,
@@ -94,6 +100,7 @@ class TreasuryBillTests(unittest.TestCase):
                                            Decimal("0.91842")))
         t_bill.add_transaction(Transaction(None,
                                            date.fromisoformat("20240522"),
+                                           asset,
                                            "(US912797HR13) TBILL MATURITY (912797HR1, B 05/23/24, US912797HR13)",
                                            None,
                                            OpenCloseIndicator.CLOSE,

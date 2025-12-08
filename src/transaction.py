@@ -3,6 +3,7 @@ from datetime import date
 from decimal import Decimal
 from enum import Enum, auto
 
+from Asset import Asset
 from money import Money
 
 
@@ -25,6 +26,7 @@ class AcquisitionType(Enum):
 class Transaction:
     trade_id: str | None
     date: date
+    asset: Asset | None
     activity: str | None
     buy_sell: BuySell | None
     open_close: OpenCloseIndicator | None
