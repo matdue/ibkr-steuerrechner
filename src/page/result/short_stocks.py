@@ -42,7 +42,7 @@ def display_short_stocks(result: Result, df_all: pd.DataFrame):
     st.write(f"Gewinne aus Aktienleerverkäufen: {format_currency(profitable_trades)}")
     st.write(f"Verluste aus Aktienleerverkäufen: {format_currency(abs(lossy_trades))}")
     st.write(f"Saldo: {format_currency(sum_trades)}")
-    with st.expander(f"Kapitalflussrechnung (nur abgeschlossene Aktienleerverkäufe)", True):
+    with st.expander("Kapitalflussrechnung (nur abgeschlossene Aktienleerverkäufe)", True):
         display_dataframe(filtered_result.df,
                           ["date"],
                           {"amount": "EUR", "profit": "EUR"})

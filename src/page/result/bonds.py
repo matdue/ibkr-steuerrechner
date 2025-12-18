@@ -18,7 +18,7 @@ def display_bonds(result: Result, df_all: pd.DataFrame):
     st.write(f"Gewinne aus Anleihenveräußerungen: {format_currency(profitable_trades)}")
     st.write(f"Verluste aus Anleihenveräußerungen: {format_currency(abs(lossy_trades))}")
     st.write(f"Saldo: {format_currency(sum_trades)}")
-    with st.expander(f"Kapitalflussrechnung (nur abgeschlossene Anleihengeschäfte)", True):
+    with st.expander("Kapitalflussrechnung (nur abgeschlossene Anleihengeschäfte)", True):
         display_dataframe(result.df,
                           ["date"],
                           {"amount": "EUR", "profit": "EUR"})

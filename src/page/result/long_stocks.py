@@ -47,7 +47,7 @@ def display_long_stocks(result: Result, df_all: pd.DataFrame):
         st.write(f"""Die Verluste aus Aktienveräußerungen übersteigen die Gewinne. Das Finanzamt wird die übersteigenden
             Verluste in Höhe von {format_currency(abs(sum_trades))} ins nächste Jahr vortragen. Sie können nicht mit
             Gewinnen aus anderen Kapitalgeschäften verrechnet werden.""")
-    with st.expander(f"Kapitalflussrechnung (nur abgeschlossene Aktiengeschäfte)", True):
+    with st.expander("Kapitalflussrechnung (nur abgeschlossene Aktiengeschäfte)", True):
         display_dataframe(filtered_result.df,
                           ["date"],
                           {"amount": "EUR", "profit": "EUR"})

@@ -12,7 +12,7 @@ from transaction_collection import TaxableTransaction
 class DepotPositionTests(unittest.TestCase):
     def test_no_transactions_should_be_of_none_type(self):
         depot_position = DepotPosition(Asset("XXX", "ConID", "STK"))
-        self.assertEqual(None, depot_position.position_type())
+        self.assertIsNone(depot_position.position_type())
 
     def test_initial_txn_open_buy_should_be_of_type_long(self):
         asset = Asset("XXX", "ConID", "STK")

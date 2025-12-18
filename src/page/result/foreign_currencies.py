@@ -42,7 +42,7 @@ st.write("""Das [BMF-Schreiben vom 19. Mai 2022](https://esth.bundesfinanzminist
 st.write("""Fremdwährungsgewinne können alternativ dem Forexbericht entnommen werden, der allerdings nicht an die 
     deutsche Gesetzgebung angepasst ist und zu hoch oder zu niedrig ausfallen kann.""")
 
-with st.expander(f"Erläuterungen"):
+with st.expander("Erläuterungen"):
     st.write("""Eine Transaktion in Fremdwährung setzt sich, steuerlich betrachtet, aus zwei Transaktionen
         zusammen: Einer Transaktion, die EUR von/nach der Fremdwährung tauscht, und der Transaktion, die das
         Geschäft darstellt. Zum Beispiel setzt sich der Kauf einer Aktie in USD zusammen aus dem Tausch von USD
