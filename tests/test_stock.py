@@ -1,8 +1,10 @@
+import datetime
 import unittest
 from datetime import date
 from decimal import Decimal
 
 from Asset import Asset
+from depot_position import DepotPositionType
 from money import Money
 from stock import Stock
 from testutils import read_report
@@ -234,6 +236,120 @@ class StockTests(unittest.TestCase):
                 True
             )
         ], result._stocks)
+
+    def test_reverse_split(self):
+        result = read_report("resources/stock/reverse_split.csv")
+
+        self.assertEqual(1, len(result._stocks))
+        asset = Asset("AMCR", "845305949", "STK", "COMMON")
+        old_asset = Asset("AMCR", "364845429", "STK", "COMMON")
+        self.assertEqual([
+            Stock(
+                asset,
+                [
+                    Transaction("1251932405",
+                                date.fromisoformat("20251216"),
+                                old_asset,
+                                "Buy 6 AMCOR PLC ",
+                                BuySell.BUY,
+                                OpenCloseIndicator.OPEN,
+                                Decimal(6),
+                                Money(Decimal("-43.038737984"), "EUR"),
+                                Money(Decimal("-50.55945725"), "USD"),
+                                Decimal("0.85125")),
+                    Transaction(None,
+                                date.fromisoformat("20260114"),
+                                asset,
+                                "AMCR(JE00BJ1F3079) SPLIT 1 FOR 5 (AMCR, AMCOR PLC, JE00BV7DQ550)",
+                                None,
+                                None,
+                                Decimal("1.2"),
+                                None,
+                                None,
+                                None,
+                                action_id="162725112",
+                                action_type="RS"),
+                    Transaction(None,
+                                date.fromisoformat("20260114"),
+                                old_asset,
+                                "AMCR(JE00BJ1F3079) SPLIT 1 FOR 5 (AMCR.OLD, AMCOR PLC, JE00BJ1F3079)",
+                                None,
+                                None,
+                                Decimal(-6),
+                                None,
+                                None,
+                                None,
+                                action_id="162725112",
+                                action_type="RS"),
+                    Transaction("1291183996",
+                                date.fromisoformat("20260123"),
+                                asset,
+                                "Sell -1 AMCOR PLC ",
+                                BuySell.SELL,
+                                OpenCloseIndicator.CLOSE,
+                                Decimal(-1),
+                                Money(Decimal("36.938990644"), "EUR"),
+                                Money(Decimal("43.69254775"), "USD"),
+                                Decimal("0.84543")),
+                    Transaction("1291184061",
+                                date.fromisoformat("20260123"),
+                                asset,
+                                "Sell -0.2 AMCOR PLC ",
+                                BuySell.SELL,
+                                OpenCloseIndicator.CLOSE,
+                                Decimal("-0.2"),
+                                Money(Decimal("7.446480651"), "EUR"),
+                                Money(Decimal("8.807921"), "USD"),
+                                Decimal("0.84543"))
+                ],
+                True
+            )
+        ], result._stocks)
+
+        stock_result = result.get_stocks(2026, DepotPositionType.LONG).df.to_dict(orient="records")
+        self.assertListEqual(
+            stock_result,
+            [
+                {
+                    'activity': 'Buy 6 AMCOR PLC ; AMCR(JE00BJ1F3079) SPLIT 1 FOR 5 (AMCR, AMCOR PLC, JE00BV7DQ550); AMCR(JE00BJ1F3079) SPLIT 1 FOR 5 (AMCR.OLD, AMCOR PLC, JE00BJ1F3079)',
+                    'amount': Decimal('-35.86'),
+                    'date': datetime.date(2025, 12, 16),
+                    'profit': None,
+                    'quantity': Decimal('1'),
+                    'sequence': 1,
+                    'stock_type': 'COMMON',
+                    'trade_id': '1251932405'},
+                {
+                    'activity': 'Sell -1 AMCOR PLC ',
+                    'amount': Decimal('36.94'),
+                    'date': datetime.date(2026, 1, 23),
+                    'profit': Decimal('1.08'),
+                    'quantity': Decimal('-1'),
+                    'sequence': 1,
+                    'stock_type': 'COMMON',
+                    'trade_id': '1291183996'
+                },
+                {
+                    'activity': 'Buy 6 AMCOR PLC ; AMCR(JE00BJ1F3079) SPLIT 1 FOR 5 (AMCR, AMCOR PLC, JE00BV7DQ550); AMCR(JE00BJ1F3079) SPLIT 1 FOR 5 (AMCR.OLD, AMCOR PLC, JE00BJ1F3079)',
+                    'amount': Decimal('-7.18'),
+                    'date': datetime.date(2025, 12, 16),
+                    'profit': None,
+                    'quantity': Decimal('0.2'),
+                    'sequence': 2,
+                    'stock_type': 'COMMON',
+                    'trade_id': '1251932405'},
+                {
+                    'activity': 'Sell -0.2 AMCOR PLC ',
+                    'amount': Decimal('7.45'),
+                    'date': datetime.date(2026, 1, 23),
+                    'profit': Decimal('0.27'),
+                    'quantity': Decimal('-0.2'),
+                    'sequence': 2,
+                    'stock_type': 'COMMON',
+                    'trade_id': '1291184061'
+                }
+            ]
+        )
 
     def test_profit_buy_long_unclosed(self):
         asset = Asset("GAB PRK", "ConID", "STK")

@@ -35,3 +35,5 @@ class Transaction:
     amount_orig: Money | None
     fx_rate: Decimal | None  # amount_orig * fx_rate = amount
     acquisition: AcquisitionType = AcquisitionType.GENUINE
+    action_id: str | None = None
+    action_type: str | None = None

@@ -13,16 +13,17 @@ class DataError(Exception):
 
 DATE_COLUMNS = ["Expiry", "ReportDate", "Date", "TradeDate"]
 STATEMENT_OF_FUNDS_SECTION_CODE = "STFU"
-STATEMENT_OF_FUNDS_COLUMNS = \
-    ["CurrencyPrimary", "FXRateToBase", "AssetClass", "SubCategory", "Symbol", "Conid", "Buy/Sell",
-     "Description", "Strike", "Expiry", "Put/Call", "ReportDate", "Date", "ActivityCode",
-     "ActivityDescription", "TradeID", "OrderID", "TradeQuantity", "TradePrice", "TradeGross",
-     "TradeCommission", "TradeTax", "Amount", "LevelOfDetail", "TransactionID", "ActionID"]
+STATEMENT_OF_FUNDS_COLUMNS = ["CurrencyPrimary", "FXRateToBase", "AssetClass", "SubCategory", "Symbol", "Conid",
+                              "Buy/Sell", "Description", "Strike", "Expiry", "Put/Call", "ReportDate", "Date",
+                              "ActivityCode", "ActivityDescription", "TradeID", "OrderID", "TradeQuantity",
+                              "TradePrice", "TradeGross", "TradeCommission", "TradeTax", "Amount", "LevelOfDetail",
+                              "TransactionID", "ActionID"]
 TRADES_COLUMNS_SECTION_CODE = "TRNT"
-TRADES_COLUMNS = \
-    ["AssetClass", "Symbol", "Conid", "TradeID", "Open/CloseIndicator", "Buy/Sell", "Quantity", "TradeDate"]
+TRADES_COLUMNS = ["AssetClass", "Symbol", "Conid", "TradeID", "Open/CloseIndicator", "Buy/Sell", "Quantity",
+                  "TradeDate"]
 CORPORATE_ACTIONS_SECTION_CODE = "CORP"
-CORPORATE_ACTIONS_COLUMNS = ["AssetClass","Symbol","Description","Conid","Date/Time","Quantity","Type"]
+CORPORATE_ACTIONS_COLUMNS = ["AssetClass", "SubCategory", "Symbol", "Description", "Conid", "Date/Time", "Quantity",
+                             "Type", "ActionID"]
 
 
 def decimal_from_value(value: str):

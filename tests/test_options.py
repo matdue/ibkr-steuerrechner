@@ -10,6 +10,9 @@ from transaction import Transaction, OpenCloseIndicator, BuySell
 
 
 class OptionsTests(unittest.TestCase):
+
+    maxDiff = None
+
     def test_short_expire(self):
         result = read_report("resources/options/short_expire.csv")
 
@@ -477,7 +480,9 @@ class OptionsTests(unittest.TestCase):
                                 Decimal(-9),
                                 None,
                                 None,
-                                None),
+                                None,
+                                action_id="160484717",
+                                action_type="FS"),
                     Transaction("1226458965",
                                 date.fromisoformat("20251120"),
                                 asset,
@@ -784,7 +789,9 @@ class OptionsTests(unittest.TestCase):
                                 Decimal(9),
                                 None,
                                 None,
-                                None),
+                                None,
+                                action_id="160484717",
+                                action_type="FS"),
                     Transaction("1226458973",
                                 date.fromisoformat("20251120"),
                                 asset,

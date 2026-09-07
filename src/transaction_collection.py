@@ -123,6 +123,26 @@ def to_opening_closing_pairs(transactions: Iterable[Transaction], year: int) -> 
                 opening_transactions.append(transaction)
             case OpenCloseIndicator.CLOSE:
                 closing_transactions.append(transaction)
+            case None:
+                match transaction.action_type:
+                    case "RS":
+                        # Reverse split
+                        opening_transactions = deque[Transaction]([
+                            dataclasses.replace(
+                                txn,
+                                quantity=txn.quantity + transaction.quantity / len(opening_transactions),
+                                activity="; ".join(filter(None, (txn.activity, transaction.activity)))
+                            )
+                            for txn in opening_transactions
+                        ])
+                        closing_transactions = [
+                            dataclasses.replace(
+                                txn,
+                                quantity=txn.quantity + transaction.quantity / len(closing_transactions),
+                                activity="; ".join(filter(None, (txn.activity, transaction.activity)))
+                            )
+                            for txn in closing_transactions
+                        ]
 
     for closing_transaction in closing_transactions:
         transaction_pair = TransactionPair(

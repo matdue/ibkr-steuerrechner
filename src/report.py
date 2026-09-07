@@ -118,16 +118,16 @@ class Report:
             return
         # Maturity record does not include quantity, so we copy it from amount with 1 quantity = 1 USD
         maturity_transaction = Transaction(
-            None,
-            row["Date"],
-            None,
-            row["ActivityDescription"],
-            None,
-            OpenCloseIndicator.CLOSE,
-            -row["Amount_orig"],
-            Money(row["Amount"], row["CurrencyPrimary"]),
-            Money(row["Amount_orig"], row["CurrencyPrimary_orig"]),
-            row["FXRateToBase_orig"]
+            trade_id=None,
+            date=row["Date"],
+            asset=None,
+            activity=row["ActivityDescription"],
+            buy_sell=None,
+            open_close=OpenCloseIndicator.CLOSE,
+            quantity=-row["Amount_orig"],
+            amount=Money(row["Amount"], row["CurrencyPrimary"]),
+            amount_orig=Money(row["Amount_orig"], row["CurrencyPrimary_orig"]),
+            fx_rate=row["FXRateToBase_orig"]
         )
         depot_position.add_transaction(maturity_transaction)
         self.add_foreign_currency_flow(row, True)
@@ -144,17 +144,17 @@ class Report:
 
         amount_orig = Money(row["Amount_orig"].quantize(Decimal("1.00")), row["CurrencyPrimary_orig"])
         foreign_currency_account.add_transaction(Transaction(
-            row["TradeID"],
-            row["Date"],
-            None,
-            row["ActivityDescription"],
-            BuySell.BUY if amount_orig.amount >= 0 else BuySell.SELL,
-            OpenCloseIndicator.OPEN if amount_orig.amount >= 0 else OpenCloseIndicator.CLOSE,
-            amount_orig.amount,
-            Money(row["Amount"].quantize(Decimal("1.00")), row["CurrencyPrimary"]).copy_sign(amount_orig),
-            amount_orig,
-            row["FXRateToBase_orig"],
-            AcquisitionType.GENUINE if taxable else AcquisitionType.NON_GENUINE
+            trade_id=row["TradeID"],
+            date=row["Date"],
+            asset=None,
+            activity=row["ActivityDescription"],
+            buy_sell=BuySell.BUY if amount_orig.amount >= 0 else BuySell.SELL,
+            open_close=OpenCloseIndicator.OPEN if amount_orig.amount >= 0 else OpenCloseIndicator.CLOSE,
+            quantity=amount_orig.amount,
+            amount=Money(row["Amount"].quantize(Decimal("1.00")), row["CurrencyPrimary"]).copy_sign(amount_orig),
+            amount_orig=amount_orig,
+            fx_rate=row["FXRateToBase_orig"],
+            acquisition=AcquisitionType.GENUINE if taxable else AcquisitionType.NON_GENUINE
         ))
 
     def add_forex(self, row: pd.Series):
@@ -243,13 +243,14 @@ class Report:
 
         def stock_line(transactions: Iterable[Transaction]):
             for transaction_no, transaction in enumerate(transactions, 1):
+                amount = round(transaction.amount.amount, 2) if transaction.amount is not None else None
                 yield (transaction_no,
                        transaction.date,
                        transaction.activity,
                        transaction.asset.sub_category,
                        transaction.trade_id,
                        transaction.quantity,
-                       round(transaction.amount.amount, 2))
+                       amount)
 
         transactions = (transaction
                         for stock in self._stocks
@@ -467,7 +468,7 @@ class Report:
             case _:
                 self.add_unknown_line(row)
 
-    def _find_stock_position(self, symbol: str, con_id: str, asset_class: str, sub_category: str) -> Stock | None:
+    def _find_stock_position(self, symbol: str, con_id: str, asset_class: str, sub_category: str) -> Stock:
         depot_position = next((stock
                                for stock in self._stocks
                                if stock.asset.con_id == con_id and not stock.closed),
@@ -480,7 +481,16 @@ class Report:
 
         return depot_position
 
-    def _find_option_position(self, symbol: str, con_id: str, asset_class: str) -> Option | None:
+    def _find_other_stock_position_by_actionid(self, con_id: str, action_id: str) -> Stock | None:
+        depot_position = next((stock
+                               for stock in self._stocks
+                               if stock.asset.con_id != con_id
+                               for txn in stock.transactions
+                               if txn.action_id == action_id and stock.closed),
+                              None)
+        return depot_position
+
+    def _find_option_position(self, symbol: str, con_id: str, asset_class: str) -> Option:
         depot_position = next((option
                                for option in self._options
                                if option.asset.con_id == con_id and not option.closed),
@@ -493,7 +503,7 @@ class Report:
 
         return depot_position
 
-    def _find_treasury_bill_position(self, symbol: str, con_id: str, asset_class: str) -> TreasuryBill | None:
+    def _find_treasury_bill_position(self, symbol: str, con_id: str, asset_class: str) -> TreasuryBill:
         depot_position = next((t_bill
                                for t_bill in self._treasury_bills
                                if t_bill.asset.con_id == con_id and not t_bill.closed),
@@ -535,43 +545,46 @@ class Report:
             # Trade without corresponding entry in statement of funds => Trade without moving any money,
             # e.g. a worthless expired option
             depot_position.add_transaction(Transaction(
-                trade_id,
-                row["TradeDate"],
-                depot_position.asset,
-                None,
-                BuySell(buy_sell),
-                OpenCloseIndicator(row["Open/CloseIndicator"]),
-                row["Quantity"],
-                None,
-                None,
-                None
+                trade_id=trade_id,
+                date=row["TradeDate"],
+                asset=depot_position.asset,
+                activity=None,
+                buy_sell=BuySell(buy_sell),
+                open_close=OpenCloseIndicator(row["Open/CloseIndicator"]),
+                quantity=row["Quantity"],
+                amount=None,
+                amount_orig=None,
+                fx_rate=None
             ))
         else:
             depot_position.add_transaction(Transaction(
-                row["TradeID"],
-                row["Date"],
-                depot_position.asset,
-                row["ActivityDescription"],
-                BuySell(row["Buy/Sell"]),
-                OpenCloseIndicator(row["Open/CloseIndicator"]),
-                row["TradeQuantity"],
-                Money(row["Amount"], row["CurrencyPrimary"]),
-                Money(row["Amount_orig"], row["CurrencyPrimary_orig"]),
-                row["FXRateToBase_orig"]
+                trade_id=row["TradeID"],
+                date=row["Date"],
+                asset=depot_position.asset,
+                activity=row["ActivityDescription"],
+                buy_sell=BuySell(row["Buy/Sell"]),
+                open_close=OpenCloseIndicator(row["Open/CloseIndicator"]),
+                quantity=row["TradeQuantity"],
+                amount=Money(row["Amount"], row["CurrencyPrimary"]),
+                amount_orig=Money(row["Amount_orig"], row["CurrencyPrimary_orig"]),
+                fx_rate=row["FXRateToBase_orig"]
             ))
 
     def process_corporate_action(self, row: pd.Series):
         asset_class = row["AssetClass"]
-        if asset_class not in ["OPT", "BILL"]:
+        if asset_class not in ["STK", "OPT", "BILL"]:
             raise NotImplementedError()
         action_type = row["Type"]
-        if action_type not in ["TM", "FS"]:
+        if action_type not in ["TM", "FS", "RS"]:
             raise NotImplementedError()
         symbol = row["Symbol"]
         con_id = row["Conid"]
+        action_id = row["ActionID"]
 
-        depot_position: DepotPosition | None = None
         match asset_class:
+            case "STK":
+                depot_position = self._find_stock_position(symbol, con_id, asset_class, row["SubCategory"])
+
             case "OPT":
                 depot_position = self._find_option_position(symbol, con_id, asset_class)
 
@@ -580,14 +593,29 @@ class Report:
                 return
 
         depot_position.add_transaction(Transaction(
-            None,
-            row["Date/Time"],
-            depot_position.asset,
-            row["Description"],
-            None,
-            None,
-            row["Quantity"],
-            None,
-            None,
-            None
+            trade_id=None,
+            date=row["Date/Time"],
+            asset=depot_position.asset,
+            activity=row["Description"],
+            buy_sell=None,
+            open_close=None,
+            quantity=row["Quantity"],
+            amount=None,
+            amount_orig=None,
+            fx_rate=None,
+            action_id=action_id,
+            action_type=action_type,
         ))
+
+        if action_type == "RS" and isinstance(depot_position, Stock):
+            # Reverse split
+            corresponding_stock = self._find_other_stock_position_by_actionid(con_id, action_id)
+            if corresponding_stock is not None:
+                # Merge transactions of both depot positions into the latest one
+                src_depot_position = depot_position
+                dst_depot_position = corresponding_stock
+                if dst_depot_position.transactions[0].date < src_depot_position.transactions[0].date:
+                    src_depot_position, dst_depot_position = dst_depot_position, src_depot_position
+                for transaction in src_depot_position.transactions:
+                    dst_depot_position.add_transaction(transaction)
+                self._stocks.remove(src_depot_position)

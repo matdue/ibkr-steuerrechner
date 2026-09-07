@@ -49,6 +49,8 @@ def create_report(data_files: list):
         pd.concat(df_all_trades).apply(lambda row: result.process_trade(row), axis=1)
     if df_all_statement_of_funds:
         pd.concat(df_all_statement_of_funds).apply(lambda row: result.process_statement(row), axis=1)
+    if df_all_corporate_actions:
+        pd.concat(df_all_corporate_actions).apply(lambda row: result.process_corporate_action(row), axis=1)
     return result
 
 
