@@ -57,7 +57,8 @@ def display_dataframe(df: pd.DataFrame,
                  hide_index=True,
                  column_config=column_config,
                  width="stretch",
-                 placeholder="")
+                 placeholder="",
+                 lazy=False)
 
 
 def display_export_buttons(result: Result, filename: str, excel_sheet_name: str, decimal_columns: list[str]):
