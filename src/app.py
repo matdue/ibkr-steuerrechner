@@ -3,7 +3,6 @@ import streamlit as st
 
 
 def main():
-    pd.options.mode.copy_on_write = True
     st.set_page_config("IBKR Steuerrechner", layout="wide")
 
     start_pages = [
