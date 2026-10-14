@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "babel==2.18.0",
-    "numpy==2.5.3",
+    "numpy==2.5.4",
     "pandas==3.0.6",
     "pandas-stubs==3.0.5.260914",
     "python-dateutil==2.9.0.post0",
