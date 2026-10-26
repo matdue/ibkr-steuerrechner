@@ -107,7 +107,7 @@ def read_statement_of_funds(filename: str, filebuf):
         df_base_currency = df_base_currency.merge(df_forex_fees, how="left", on="TradeID", suffixes=(None, "_forex_fee"))
         df_base_currency["Amount_forex_fee"] = df_base_currency["Amount_forex_fee"].fillna(Decimal(0))
         df_base_currency["Amount"] += df_base_currency["Amount_forex_fee"]
-        df_base_currency.drop(columns=["Amount_forex_fee"], inplace=True)
+        df_base_currency = df_base_currency.drop(columns=["Amount_forex_fee"])
 
         df_orig_currency = df.query(f"LevelOfDetail == 'Currency' and CurrencyPrimary != '{base_currency}'")
         df = df_base_currency.merge(df_orig_currency, how="left", on="TransactionID", suffixes=(None, "_orig"))
@@ -126,7 +126,7 @@ def read_trades(filename: str, filebuf):
     try:
         df = read_csv_part(filebuf, TRADES_COLUMNS_SECTION_CODE, TRADES_COLUMNS)
         convert_dates(df)
-        df.sort_values(by="TradeDate", kind="stable", inplace=True)
+        df = df.sort_values(by="TradeDate", kind="stable")
         return df
     except EmptyDataError:
         return pd.DataFrame(columns=TRADES_COLUMNS)
@@ -137,7 +137,7 @@ def read_corporate_actions(filename: str, filebuf):
     try:
         df = read_csv_part(filebuf, CORPORATE_ACTIONS_SECTION_CODE, CORPORATE_ACTIONS_COLUMNS)
         convert_dates(df)
-        df.sort_values(by="Date/Time", kind="stable", inplace=True)
+        df = df.sort_values(by="Date/Time", kind="stable")
         return df
     except EmptyDataError:
         return pd.DataFrame(columns=CORPORATE_ACTIONS_COLUMNS)
