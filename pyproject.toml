@@ -10,7 +10,7 @@ dependencies = [
     "pandas==3.1.0",
     "pandas-stubs==3.0.5.260914",
     "python-dateutil==2.9.0.post0",
-    "streamlit==1.66.0",
+    "streamlit==1.66.1",
     "xlsxwriter==3.2.9",
 ]
 
