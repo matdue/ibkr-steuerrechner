@@ -10,7 +10,7 @@ dependencies = [
     "pandas==3.1.1",
     "python-dateutil==4.0.0",
     "streamlit==1.67.0",
-    "xlsxwriter==3.3.1",
+    "xlsxwriter==3.3.3",
 ]
 
 [dependency-groups]
